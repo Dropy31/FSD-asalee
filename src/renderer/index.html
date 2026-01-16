@@ -39,76 +39,86 @@
             </div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto py-4">
-            <ul class="space-y-1">
-                <li>
-                    <button
-                        class="nav-btn active w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                        data-target="dashboard">
-                        <i class="fas fa-users w-6 text-center"></i> Patients
-                    </button>
-                </li>
-                <li>
-                    <button
-                        class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                        data-target="etp-library">
-                        <i class="fas fa-book-medical w-6 text-center"></i> Bibliothèque
-                    </button>
-                </li>
-                <!-- Removed Section Header: Patient -->
-                <li>
-                    <button
-                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
-                        data-target="identity">
-                        <i class="fas fa-user w-6 text-center"></i> Profil
-                        <i id="identity-alert-icon"
-                            class="fas fa-exclamation-circle text-red-500 absolute right-4 hidden animate-pulse"
-                            title="Mise à jour automatique: Néphropathie"></i>
-                    </button>
-                </li>
-                <!-- Removed Section Header: Risques -->
+        <nav class="flex-1 overflow-y-auto py-4 space-y-6">
+            <!-- SECTION: GENERAL -->
+            <div>
+                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Général</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <button
+                            class="nav-btn active w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="dashboard">
+                            <i class="fas fa-users w-6 text-center"></i> Patients
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="etp-library">
+                            <i class="fas fa-book-medical w-6 text-center"></i> Bibliothèque
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="pharma-book">
+                            <i class="fas fa-pills w-6 text-center"></i> Livret Pharmaceutique
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
-                <!-- Removed Section Header: Médical -->
-                <li>
-                    <button
-                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                        data-target="followup">
-                        <i class="fas fa-chart-line w-6 text-center"></i> Suivi Biologique
-                    </button>
-                </li>
-                <li>
-                    <button
-                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                        data-target="exams">
-                        <i class="fas fa-calendar-check w-6 text-center"></i> Examens
-                    </button>
-                </li>
-                <li>
-                    <button
-                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                        data-target="treatments">
-                        <i class="fas fa-pills w-6 text-center"></i> Traitements
-                    </button>
-                </li>
-
-                <!-- Removed Section Header: Éducation -->
-                <li>
-                    <button
-                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                        data-target="education">
-                        <i class="fas fa-graduation-cap w-6 text-center"></i> Education Thérapeutique
-                    </button>
-                </li>
-                <li>
-                    <button
-                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                        data-target="synthesis">
-                        <i class="fas fa-chart-pie w-6 text-center"></i> Synthèse Clinique
-                    </button>
-                </li>
-            </ul>
-
-
+            <!-- SECTION: PATIENT -->
+            <div>
+                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Dossier Patient</h3>
+                <ul class="space-y-1">
+                    <li>
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
+                            data-target="identity">
+                            <i class="fas fa-user w-6 text-center"></i> Profil
+                            <i id="identity-alert-icon"
+                                class="fas fa-exclamation-circle text-red-500 absolute right-4 hidden animate-pulse"
+                                title="Mise à jour automatique: Néphropathie"></i>
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="followup">
+                            <i class="fas fa-chart-line w-6 text-center"></i> Suivi Biologique
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="exams">
+                            <i class="fas fa-calendar-check w-6 text-center"></i> Examens
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="treatments">
+                            <i class="fas fa-prescription-bottle-alt w-6 text-center"></i> Traitements
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="education">
+                            <i class="fas fa-graduation-cap w-6 text-center"></i> Education Thérapeutique
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="synthesis">
+                            <i class="fas fa-chart-pie w-6 text-center"></i> Synthèse Clinique
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </nav>
 
         <div class="p-4 border-t border-slate-700">
@@ -1522,6 +1532,62 @@
                 </div>
             </div>
         </div>
+        <!-- VIEW: PHARMA BOOK (New) -->
+        <div id="view-pharma-book" class="view-section hidden p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+                <div class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Livret Pharmaceutique</h2>
+                        <p class="text-gray-500 text-sm">Gérez ici le référentiel des médicaments.</p>
+                    </div>
+                    <button
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
+                        id="btn-new-medication">
+                        <i class="fas fa-plus"></i> Nouveau Médicament
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="inp-pharma-search"
+                            class="w-full pl-12 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all text-sm"
+                            placeholder="Rechercher...">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-left table-fixed">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase w-48 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    data-sort="dci">
+                                    DCI <i class="fas fa-sort-alpha-down ml-1 text-gray-400" id="icon-sort-dci"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase w-48 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    data-sort="commercial_name">
+                                    Nom Commercial <i class="fas fa-sort ml-1 text-gray-300"
+                                        id="icon-sort-commercial_name"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase w-48 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    data-sort="class">
+                                    Classe <i class="fas fa-sort ml-1 text-gray-300" id="icon-sort-class"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase w-32 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    data-sort="route">
+                                    Voie <i class="fas fa-sort ml-1 text-gray-300" id="icon-sort-route"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase">Posologies</th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase text-right w-24">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-pharma-book" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         </div> <!-- Close content-area -->
 
     </main>
@@ -1623,11 +1689,70 @@
         </div>
     </div>
 
+    <!-- MODAL: MEDICATION EDITOR -->
+    <div id="modal-medication" class="modal hidden">
+        <div class="modal-content max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800" id="modal-med-title">Nouveau Médicament</h3>
+                <span class="close-button text-gray-400 hover:text-gray-600 cursor-pointer text-2xl"
+                    id="close-modal-med">&times;</span>
+            </div>
+            <form id="form-medication" class="space-y-4">
+                <input type="hidden" id="inp-med-id">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-wrapper">
+                        <input type="text" id="inp-med-dci" class="floating-input" placeholder=" " required>
+                        <label class="floating-label">DCI (Dénomination Commune)</label>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="text" id="inp-med-commercial" class="floating-input" placeholder=" ">
+                        <label class="floating-label">Nom Commercial</label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-wrapper relative z-20" id="wrapper-med-class">
+                        <input type="text" id="inp-med-class" class="floating-input pr-8" placeholder=" "
+                            autocomplete="off">
+                        <label class="floating-label">Classe Thérapeutique</label>
+                        <!-- Chevron Icon -->
+                        <div
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </div>
+                        <!-- Custom Dropdown List -->
+                        <div id="list-med-class"
+                            class="absolute z-10 w-full bg-white border border-gray-200 rounded-b-lg shadow-lg max-h-48 overflow-y-auto hidden mt-1">
+                        </div>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="text" id="inp-med-route" class="floating-input" placeholder=" ">
+                        <label class="floating-label">Voie d'administration</label>
+                    </div>
+                </div>
+
+                <div class="input-wrapper">
+                    <input type="text" id="inp-med-dosages" class="floating-input" placeholder=" ">
+                    <label class="floating-label">Posologies (séparées par des virgules)</label>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        id="btn-cancel-med">Annuler</button>
+                    <button type="submit"
+                        class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="notification-container"></div>
 
     <script src="calculations.js"></script>
     <script src="data/medications.js"></script>
+    <script src="pharma_book.js"></script>
     <script src="data/education_topics.js"></script>
     <script src="renderer.js"></script>
 </body>

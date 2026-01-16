@@ -51,6 +51,31 @@ function initDatabase(customPath) {
     `;
     db.exec(createEtpTableQuery);
 
+    // Create table for Medications (Livret Pharmaceutique)
+    // Updated Schema 2026-01-16
+    const createMedicationsQuery = `
+        CREATE TABLE IF NOT EXISTS medications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dci TEXT NOT NULL,
+            commercial_name TEXT,
+            class TEXT,
+            route TEXT,
+            dosages TEXT, -- stored as comma-separated string
+            created_at TEXT,
+            updated_at TEXT
+        )
+    `;
+    db.exec(createMedicationsQuery);
+
+    // Migration v2: Check if 'dci' column exists, if not, we might need to migrate or just drop/recreate for dev
+    try {
+        const test = db.prepare('SELECT dci FROM medications LIMIT 1').get();
+    } catch (e) {
+        console.log('Migrating medications table: Recreating for new schema...');
+        db.exec('DROP TABLE IF EXISTS medications');
+        db.exec(createMedicationsQuery);
+    }
+
     // Migration: Add custom_id if it doesn't exist
     try {
         console.log('Migrating etp_sessions: Checking custom_id...');
@@ -268,6 +293,34 @@ function deleteAllEtpSessions() {
     return info.changes;
 }
 
+// --- Medications Operations ---
+
+function createMedication(data) {
+    if (!db) throw new Error('Database not initialized');
+    const now = new Date().toISOString();
+    const stmt = db.prepare('INSERT INTO medications (dci, commercial_name, class, route, dosages, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    const result = stmt.run(data.dci, data.commercial_name, data.class, data.route, data.dosages, now, now);
+    return { id: result.lastInsertRowid, ...data };
+}
+
+function getAllMedications() {
+    if (!db) throw new Error('Database not initialized');
+    return db.prepare('SELECT * FROM medications ORDER BY dci ASC').all();
+}
+
+function updateMedication(id, data) {
+    if (!db) throw new Error('Database not initialized');
+    const now = new Date().toISOString();
+    const stmt = db.prepare('UPDATE medications SET dci = ?, commercial_name = ?, class = ?, route = ?, dosages = ?, updated_at = ? WHERE id = ?');
+    stmt.run(data.dci, data.commercial_name, data.class, data.route, data.dosages, now, id);
+    return { id, ...data };
+}
+
+function deleteMedication(id) {
+    if (!db) throw new Error('Database not initialized');
+    return db.prepare('DELETE FROM medications WHERE id = ?').run(id).changes > 0;
+}
+
 module.exports = {
     initDatabase,
     createPatient,
@@ -280,5 +333,10 @@ module.exports = {
     getAllSessions,
     updateSession,
     deleteSession,
-    deleteAllEtpSessions
+    deleteAllEtpSessions,
+    // Medications
+    createMedication,
+    getAllMedications,
+    updateMedication,
+    deleteMedication
 };

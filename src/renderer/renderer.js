@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'treatments': 'Module Thérapeutique',
         'education': 'Synthèse Éducative',
         'synthesis': 'Synthèse Clinique',
-        'etp-library': 'Bibliothèque ETP'
+        'etp-library': 'Bibliothèque ETP',
+        'pharma-book': 'Livret Pharmaceutique'
     };
 
     // let currentPatient = null; // Moved to global scope
@@ -654,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTreatmentsModule();
     initEducationModule();
     initSynthesisModule();
+    if (window.initPharmaBook) window.initPharmaBook();
 });
 
 // Helper Functions

@@ -15,5 +15,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getEtpSessions: () => ipcRenderer.invoke('db:get-sessions'),
     createEtpSession: (data) => ipcRenderer.invoke('db:create-session', data),
     updateEtpSession: (id, data) => ipcRenderer.invoke('db:update-session', id, data),
-    deleteEtpSession: (id) => ipcRenderer.invoke('db:delete-session', id)
+    deleteEtpSession: (id) => ipcRenderer.invoke('db:delete-session', id),
+    // Medications
+    getMedications: () => ipcRenderer.invoke('db:get-medications'),
+    createMedication: (data) => ipcRenderer.invoke('db:create-medication', data),
+    updateMedication: (id, data) => ipcRenderer.invoke('db:update-medication', id, data),
+    deleteMedication: (id) => ipcRenderer.invoke('db:delete-medication', id)
 });

@@ -77,3 +77,20 @@ ipcMain.handle('db:update-session', (event, id, sessionData) => {
 ipcMain.handle('db:delete-session', (event, id) => {
     return db.deleteSession(id);
 });
+
+// Medications IPC Handlers
+ipcMain.handle('db:get-medications', () => {
+    return db.getAllMedications();
+});
+
+ipcMain.handle('db:create-medication', (event, data) => {
+    return db.createMedication(data);
+});
+
+ipcMain.handle('db:update-medication', (event, id, data) => {
+    return db.updateMedication(id, data);
+});
+
+ipcMain.handle('db:delete-medication', (event, id) => {
+    return db.deleteMedication(id);
+});
