@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;">
+    <title>Suivi Diabète - Desktop Secure</title>
+    <!-- Using CDN for Tailwind for now since build process is manual -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-800 text-white flex flex-col shadow-lg">
+        <div class="p-6 border-b border-slate-700 flex items-center gap-3">
+            <i class="fas fa-heartbeat text-2xl text-blue-400"></i>
+            <h1 class="text-xl font-bold tracking-wide">Diabète<span class="text-blue-400">Suivi</span></h1>
+        </div>
+
+        <div id="active-patient-banner" class="hidden bg-slate-700 p-4 border-b border-slate-600 animate-fade-in">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-blue-300 uppercase font-semibold tracking-wider">Dossier en cours</span>
+                <button id="btn-close-patient" class="text-slate-400 hover:text-white transition-colors"
+                    title="Fermer le dossier">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-user-circle text-white text-lg"></i>
+                <span id="active-patient-name" class="font-medium text-white truncate">--</span>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li>
+                    <button
+                        class="nav-btn active w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                        data-target="dashboard">
+                        <i class="fas fa-users w-6 text-center"></i> Patients
+                    </button>
+                </li>
+                <li>
+                    <button
+                        class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                        data-target="etp-library">
+                        <i class="fas fa-book-medical w-6 text-center"></i> Bibliothèque
+                    </button>
+                </li>
+                <!-- Removed Section Header: Patient -->
+                <li>
+                    <button
+                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
+                        data-target="identity">
+                        <i class="fas fa-user w-6 text-center"></i> Identité & Infos
+                        <i id="identity-alert-icon"
+                            class="fas fa-exclamation-circle text-red-500 absolute right-4 hidden animate-pulse"
+                            title="Mise à jour automatique: Néphropathie"></i>
+                    </button>
+                </li>
+                <!-- Removed Section Header: Risques -->
+
+                <!-- Removed Section Header: Médical -->
+                <li>
+                    <button
+                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                        data-target="followup">
+                        <i class="fas fa-chart-line w-6 text-center"></i> Suivi Biologique
+                    </button>
+                </li>
+                <li>
+                    <button
+                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                        data-target="exams">
+                        <i class="fas fa-calendar-check w-6 text-center"></i> Examens
+                    </button>
+                </li>
+                <li>
+                    <button
+                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                        data-target="treatments">
+                        <i class="fas fa-pills w-6 text-center"></i> Traitements
+                    </button>
+                </li>
+
+                <!-- Removed Section Header: Éducation -->
+                <li>
+                    <button
+                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                        data-target="education">
+                        <i class="fas fa-graduation-cap w-6 text-center"></i> Education Thérapeutique
+                    </button>
+                </li>
+                <li>
+                    <button
+                        class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                        data-target="synthesis">
+                        <i class="fas fa-chart-pie w-6 text-center"></i> Synthèse Clinique
+                    </button>
+                </li>
+            </ul>
+
+
+        </nav>
+
+        <div class="p-4 border-t border-slate-700">
+            <div class="flex items-center gap-3 text-sm text-slate-400">
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>Mode Sécurisé</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
+            <h2 id="page-title" class="text-xl font-semibold text-gray-800">Tableau de Bord</h2>
+            <div class="flex items-center gap-4">
+
+                <button id="btn-new-patient"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Nouveau Patient
+                </button>
+                <div class="h-8 w-px bg-gray-200"></div>
+                <div class="flex items-center gap-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                        Dr
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Médecin</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div id="content-area" class="flex-1 overflow-y-auto p-6 bg-gray-50 relative">
+
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="view-section">
+                <!-- Search Bar -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8 flex gap-4 items-center">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="dashboard-search" placeholder="Rechercher un patient (Nom, Prénom...)"
+                            class="w-full !pl-12 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all">
+                    </div>
+                </div>
+
+                <!-- Recent Patients -->
+                <div class="mb-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Derniers Patients Consultés</h3>
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-gray-50 text-xs uppercase font-semibold text-gray-500">
+                            <tr>
+                                <th class="px-4 py-3">Nom</th>
+                                <th class="px-4 py-3">Prénom</th>
+                                <th class="px-4 py-3">Âge</th>
+                                <th class="px-4 py-3">Médecin</th>
+                                <th class="px-4 py-3">Dernière Consultation</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-recent-patients" class="divide-y divide-gray-100">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- All Patients List -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Tous les Patients</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-gray-600">
+                            <thead class="bg-gray-50 text-xs uppercase font-semibold text-gray-500">
+                                <tr>
+                                    <th class="px-4 py-3 cursor-pointer hover:text-blue-600 transition-colors"
+                                        id="sort-name">
+                                        Nom <i class="fas fa-sort ml-1"></i>
+                                    </th>
+                                    <th class="px-4 py-3">Prénom</th>
+                                    <th class="px-4 py-3">Âge</th>
+                                    <th class="px-4 py-3">Médecin</th>
+                                    <th class="px-4 py-3">Dernière Consultation</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-all-patients" class="divide-y divide-gray-100">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: IDENTITY & RISKS -->
+            <div id="view-identity" class="view-section hidden">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-7xl mx-auto">
+                    <div class="flex justify-between items-center mb-8 border-b pb-4">
+                        <h3 class="text-xl font-bold text-gray-800">Dossier Patient : Identité & Profil</h3>
+                        <!-- Save button removed as auto-save is active -->
+                    </div>
+
+                    <form id="form-identity" class="space-y-8">
+                        <input type="hidden" id="patient-id">
+
+                        <!-- SECTION 1: IDENTITY -->
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                            <h4 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                                <i class="fas fa-user-circle text-blue-500"></i> Informations Administratives
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Nom</label>
+                                    <input type="text" id="inp-lastname"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Prénom</label>
+                                    <input type="text" id="inp-firstname"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Date de
+                                        Naissance</label>
+                                    <input type="date" id="inp-birthdate"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Sexe</label>
+                                    <select id="inp-gender"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                                        <option value="">Sélectionner...</option>
+                                        <option value="M">Homme</option>
+                                        <option value="F">Femme</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Année Diag.</label>
+                                    <input type="number" id="inp-diagnosis-year"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Médecin Traitant</label>
+                                    <select id="inp-gp" class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                                        <option value="">Sélectionner...</option>
+                                        <option value="Dr MONTANE">Dr MONTANE</option>
+                                        <option value="Dr PEDESPAN">Dr PEDESPAN</option>
+                                        <option value="Dr COUPRY">Dr COUPRY</option>
+                                        <option value="Dr ROBERT ST V.">Dr ROBERT ST V.</option>
+                                        <option value="Autre">Autre</option>
+                                    </select>
+                                </div>
+                                <div class="bg-blue-50 rounded-lg border border-blue-100 p-2 text-center">
+                                    <span class="block text-xs font-semibold text-blue-600 uppercase">Âge</span>
+                                    <span id="calc-age" class="text-xl font-bold text-blue-800">--</span>
+                                </div>
+                                <div class="bg-green-50 rounded-lg border border-green-100 p-2 text-center">
+                                    <span class="block text-xs font-semibold text-green-600 uppercase">Ancienneté</span>
+                                    <span id="calc-duration" class="text-xl font-bold text-green-800">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 2: RISKS & COMPLICATIONS (New Layout) -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h4 class="text-lg font-semibold text-gray-700 mb-6 flex items-center gap-2">
+                                <i class="fas fa-heartbeat text-red-500"></i> Profil de Risque & Complications
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                <!-- Column 1: Facteurs de Risque CV -->
+                                <div class="space-y-4">
+                                    <h5 class="font-bold text-gray-800 border-b pb-2">Facteurs de Risque CV</h5>
+
+                                    <!-- HTA -->
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <label class="text-xs font-semibold text-gray-500 uppercase">HTA</label>
+                                            <div class="group relative">
+                                                <i
+                                                    class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                                <div
+                                                    class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                                    TA > 140/90 mmHg confirmée, ou patient traité pour HTA.
+                                                    <div
+                                                        class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <select id="risk-hta"
+                                            class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                            <option value="NON">NON</option>
+                                            <option value="OUI">OUI</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Dyslipidémie -->
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <label
+                                                class="text-xs font-semibold text-gray-500 uppercase">Dyslipidémie</label>
+                                            <div class="group relative">
+                                                <i
+                                                    class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                                <div
+                                                    class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                                    Anomalie du bilan lipidique (LDL, HDL, TG) ou patient traité.
+                                                    <div
+                                                        class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <select id="risk-dyslipidemia"
+                                            class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                            <option value="NON">NON</option>
+                                            <option value="OUI">OUI</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Tabagisme -->
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <label
+                                                class="text-xs font-semibold text-gray-500 uppercase">Tabagisme</label>
+                                            <div class="group relative">
+                                                <i
+                                                    class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                                <div
+                                                    class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                                    Fumeur actuel ou sevré depuis moins de 2 ans.
+                                                    <div
+                                                        class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <select id="risk-tobacco"
+                                            class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                            <option value="NON">NON</option>
+                                            <option value="OUI">OUI</option>
+                                            <option value="SEVRE">SEVRÉ</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Hérédité CV -->
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <label class="text-xs font-semibold text-gray-500 uppercase">Hérédité
+                                                CV</label>
+                                            <div class="group relative">
+                                                <i
+                                                    class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                                <div
+                                                    class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                                    IDM ou mort subite chez un parent du 1er degré: père < 55 ans ou
+                                                        mère < 65 ans. <div
+                                                        class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <select id="risk-heredity"
+                                        class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                        <option value="NON">NON</option>
+                                        <option value="OUI">OUI</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Macrovasculaire -->
+                            <div class="space-y-4">
+                                <h5 class="font-bold text-gray-800 border-b pb-2">Macrovasculaire</h5>
+
+                                <!-- AVC / AIT -->
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <label class="text-xs font-semibold text-gray-500 uppercase">AVC / AIT</label>
+                                        <div class="group relative">
+                                            <i
+                                                class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                            <div
+                                                class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                                AVC: Lésion cérébrale permanente. AIT: Symptômes neurologiques
+                                                régressifs en <24h, sans séquelle à l'imagerie. <div
+                                                    class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="macro-avc"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- Coronaropathie -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Coronaropathie</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Stentée: Angioplastie coronaire avec pose de stent. Pontée: Chirurgie de
+                                            pontage aorto-coronarien.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="macro-coronary"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- AOMI -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">AOMI</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Classification de Leriche et Fontaine. Stade 1: Asymptomatique. Stade 2:
+                                            Claudication. Stade 3: Douleurs de repos. Stade 4: Troubles trophiques.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="macro-aomi"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- Sténose Carotidienne -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Sténose
+                                        Carotidienne</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Non serrée: 50-69%. Serrée: ≥70%. Ocluse: absence de flux détectable.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="macro-stenosis"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Microvasculaire -->
+                        <div class="space-y-4">
+                            <h5 class="font-bold text-gray-800 border-b pb-2">Microvasculaire</h5>
+
+                            <!-- Rétinopathie -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Rétinopathie</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            RDNP: Non Proliférante. RDP: Proliférante. Compliquée: Maculopathie,
+                                            Hémorragie Intra-Vitréenne (HIV), Décollement de Rétine (DR), Glaucome
+                                            néo-vasculaire (GNV).
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="micro-retino"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- Néphropathie -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Néphropathie</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Classification selon le Débit de Filtration Glomérulaire (DFG) et la
+                                            présence d'albuminurie (RAC).
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="micro-nephro"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- Neuro. Sensitive -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Neuro.
+                                        Sensitive</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Perte de sensibilité (test au monofilament), paresthésies, douleurs
+                                            (brûlures, décharges).
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="micro-neuro-sens"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- Neuro. Autonome -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Neuro. Autonome</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Atteinte du système nerveux involontaire. Peut causer: hypotension
+                                            orthostatique, gastroparésie, troubles vésicaux, dysfonction érectile.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="micro-neuro-auto"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Column 4: Autres Complications -->
+                        <div class="space-y-4">
+                            <h5 class="font-bold text-gray-800 border-b pb-2">Autres</h5>
+
+                            <!-- Insuffisance Cardiaque -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Insuffisance
+                                        Cardiaque</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            FEVG: Fraction d'Éjection du Ventricule Gauche. Pourcentage de sang éjecté à
+                                            chaque battement. Normale >50%.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="other-hf"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- Fibrillation Atriale -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Fibrillation
+                                        Atriale</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Rythme cardiaque irrégulier et rapide, augmentant le risque d'AVC.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="other-afib"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="OUI">OUI</option>
+                                </select>
+                            </div>
+
+                            <!-- Risque Pied -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Risque Pied</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            Grade 0: Normal. G1: Neuropathie. G2: Neuro+AOMI/Déformation. G3: ATCD
+                                            ulcère/amputation.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="other-foot"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="Grade 0">Grade 0</option>
+                                    <option value="Grade 1">Grade 1</option>
+                                    <option value="Grade 2">Grade 2</option>
+                                    <option value="Grade 3">Grade 3</option>
+                                </select>
+                            </div>
+
+                            <!-- Atteinte Hépatique -->
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase">Atteinte
+                                        Hépatique</label>
+                                    <div class="group relative">
+                                        <i
+                                            class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help text-[10px]"></i>
+                                        <div
+                                            class="invisible group-hover:visible absolute z-50 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 pointer-events-none text-center">
+                                            NAFLD/NASH: Surcharge en graisse du foie, avec ou sans inflammation, liée au
+                                            syndrome métabolique.
+                                            <div
+                                                class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="other-liver"
+                                    class="w-full bg-gray-50 border-gray-200 rounded-full text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                    <option value="NON">NON</option>
+                                    <option value="Steatose">Stéatose</option>
+                                    <option value="NASH">NASH</option>
+                                    <option value="Cirrhose">Cirrhose</option>
+                                </select>
+                            </div>
+                        </div>
+                </div>
+            </div>
+            </form>
+        </div>
+        </div>
+        <div id="view-followup" class="view-section hidden">
+            <div class="max-w-7xl mx-auto space-y-6">
+                <!-- Quick Dial Module -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-flask text-blue-500"></i> Saisie Rapide
+                            </h3>
+                            <div class="h-6 w-px bg-gray-200"></div>
+                            <input type="date" id="bio-date"
+                                class="header-date-input bg-transparent border-none text-gray-600 font-medium focus:ring-0 cursor-pointer"
+                                title="Saisissez la date du bilan">
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="btn-add-bio"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Ajouter
+                            </button>
+                            <button id="btn-clear-bio"
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-eraser"></i> Effacer
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+
+                        <!-- Anthropométrie -->
+                        <div class="lg:col-span-2">
+                            <div class="input-group-title">Anthropométrie</div>
+                            <div class="input-group-container">
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-weight" class="floating-input" placeholder=" "
+                                        step="0.1">
+                                    <label class="floating-label">Poids (kg)</label>
+                                </div>
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-height" class="floating-input" placeholder=" "
+                                        step="1">
+                                    <label class="floating-label">Taille (cm)</label>
+                                </div>
+                                <div class="input-wrapper is-calculated bg-gray-50">
+                                    <input type="text" id="bio-bmi" class="floating-input" placeholder=" " readonly>
+                                    <label class="floating-label">IMC</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Glycémie -->
+                        <div class="lg:col-span-1">
+                            <div class="input-group-title">Glycémie</div>
+                            <div class="input-group-container">
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-hba1c" class="floating-input" placeholder=" "
+                                        step="0.1">
+                                    <label class="floating-label">HbA1c (%)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lipides -->
+                        <div class="lg:col-span-3">
+                            <div class="input-group-title grid grid-cols-3 items-center w-full"
+                                style="justify-items: center;">
+                                <span></span> <!-- Spacer to balance grid -->
+                                <span>Lipides</span>
+                                <button type="button" id="toggle-unit-lipid"
+                                    class="unit-toggle text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded transition-colors"
+                                    data-unit="g/L">Convertir en mmol/L</button>
+                            </div>
+                            <div class="input-group-container">
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-ct" class="floating-input" placeholder=" " step="0.01">
+                                    <label class="floating-label">CT (g/L)</label>
+                                </div>
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-hdl" class="floating-input" placeholder=" "
+                                        step="0.01">
+                                    <label class="floating-label">HDL (g/L)</label>
+                                </div>
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-tg" class="floating-input" placeholder=" " step="0.01">
+                                    <label class="floating-label">TG (g/L)</label>
+                                </div>
+                                <div class="input-wrapper is-calculated bg-gray-50">
+                                    <input type="text" id="bio-nonhdl" class="floating-input" placeholder=" " readonly>
+                                    <label class="floating-label">Non-HDLc (g/L)</label>
+                                </div>
+                                <div class="input-wrapper is-calculated bg-gray-50">
+                                    <input type="text" id="bio-ldl" class="floating-input" placeholder=" " readonly>
+                                    <label class="floating-label">LDLc (g/L)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fonction Rénale -->
+                        <!-- Fonction Rénale -->
+                        <div class="lg:col-span-3">
+                            <div class="input-group-title grid grid-cols-3 items-center w-full"
+                                style="justify-items: center;">
+                                <button type="button" id="toggle-unit-creat"
+                                    class="unit-toggle text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded transition-colors"
+                                    data-unit="µmol/L">Convertir en mg/L</button>
+                                <span>Fonction Rénale</span>
+                                <button type="button" id="toggle-unit-rac"
+                                    class="unit-toggle text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded transition-colors"
+                                    data-unit="mg/mmol">Convertir en mg/g</button>
+                            </div>
+                            <div class="input-group-container">
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-creat" class="floating-input" placeholder=" " step="1">
+                                    <label class="floating-label">Créatinine (µmol/L)</label>
+                                </div>
+                                <div class="input-wrapper is-calculated bg-gray-50">
+                                    <input type="text" id="bio-dfg" class="floating-input" placeholder=" " readonly>
+                                    <label class="floating-label">DFG (CKD-EPI)</label>
+                                </div>
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-rac" class="floating-input" placeholder=" " step="0.1">
+                                    <label class="floating-label">RAC (mg/mmol)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pression Artérielle -->
+                        <div class="lg:col-span-2">
+                            <div class="input-group-title">Pression Artérielle</div>
+                            <div class="input-group-container">
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-sys" class="floating-input" placeholder=" " step="1">
+                                    <label class="floating-label">PAS (mmHg)</label>
+                                </div>
+                                <div class="input-wrapper">
+                                    <input type="number" id="bio-dia" class="floating-input" placeholder=" " step="1">
+                                    <label class="floating-label">PAD (mmHg)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risque -->
+                        <div class="lg:col-span-1">
+                            <div class="input-group-title">Risque CV</div>
+                            <div class="input-group-container flex gap-2">
+                                <div class="input-wrapper is-calculated bg-gray-50 flex-1">
+                                    <input type="text" id="bio-score2d" class="floating-input" placeholder=" " readonly>
+                                    <label class="floating-label">SCORE2 (%)</label>
+                                </div>
+                                <button type="button" id="score2d-status-btn"
+                                    class="w-10 bg-white rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors border border-gray-200"
+                                    title="Statut du calcul">
+                                    <i id="score2d-status-icon" class="fas fa-question text-gray-300 text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-history text-blue-500"></i> Historique
+                    </h3>
+                    <div class="history-table-container">
+                        <table class="w-full history-table" id="bio-history-table">
+                            <thead>
+                                <tr>
+                                    <th title="Date de l'analyse">Date</th>
+                                    <th title="Poids en kg">Poids</th>
+                                    <th title="Indice de Masse Corporelle (kg/m²)">IMC</th>
+                                    <th title="Pression Artérielle Systolique (mmHg)">PAS</th>
+                                    <th title="Pression Artérielle Diastolique (mmHg)">PAD</th>
+                                    <th title="Créatinine (µmol/L)">Créat</th>
+                                    <th title="Débit de Filtration Glomérulaire (ml/min/1.73m²)">DFG</th>
+                                    <th title="Ratio Albumine/Créatinine (mg/mmol)">RAC</th>
+                                    <th title="Cholestérol Total (g/L)">CT</th>
+                                    <th title="Triglycérides (g/L)">TG</th>
+                                    <th title="LDL Cholestérol (g/L)">LDLc</th>
+                                    <th title="Hémoglobine Glyquée (%)">HbA1c</th>
+                                    <th title="Risque SCORE2-Diabetes (%)">SCORE</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Evolution Graph -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-blue-500"></i> Évolution
+                        </h3>
+                        <div class="flex gap-2">
+                            <div class="flex bg-gray-100 rounded-lg p-1 mr-2 gap-1">
+                                <button
+                                    class="px-3 py-1 text-xs font-semibold rounded-md text-gray-500 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all chart-time-filter"
+                                    data-range="all">Tout</button>
+                                <button
+                                    class="px-3 py-1 text-xs font-semibold rounded-md text-gray-500 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all chart-time-filter active"
+                                    data-range="1y">1 an</button>
+                            </div>
+                            <select id="chart-metric-select"
+                                class="bg-gray-50 border-gray-200 rounded-lg text-sm py-1 px-3 focus:ring-2 focus:ring-blue-200">
+                                <option value="weight">Poids</option>
+                                <option value="bp">Pression Artérielle</option>
+                                <option value="hba1c">HbA1c</option>
+                                <option value="dfg">Fonction Rénale (DFG)</option>
+                                <option value="rac">Ratio Albumine/Créatinine (RAC)</option>
+                                <option value="lipids">Lipides</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="relative h-80 w-full">
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCORE2-Diabetes Info Modal -->
+            <div id="score2d-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-button" id="close-score2d-modal">&times;</span>
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Détails SCORE2-Diabetes</h2>
+                    <div id="score2d-modal-body" class="text-sm text-gray-600 space-y-2">
+                        <!-- Content populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- VIEW: EXAMS -->
+        <div id="view-exams" class="view-section hidden">
+            <div class="max-w-7xl mx-auto space-y-8">
+
+                <!-- Systematic Exams Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        Examens de Suivi Systématique
+                    </h3>
+
+                    <!-- Header Row -->
+                    <div
+                        class="grid grid-cols-12 gap-4 bg-gray-50 p-3 rounded-t-lg text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <div class="col-span-3">Examen</div>
+                        <div class="col-span-4 text-center">Dernière Réal.</div>
+                        <div class="col-span-4 text-center">Renouv.</div>
+                        <div class="col-span-1 text-center">Statut</div>
+                    </div>
+
+                    <!-- Rows Wrapper -->
+                    <div class="divide-y divide-gray-100" id="systematic-exams-list">
+                        <!-- Template Row (Will be repeated 7 times manually for specific IDs) -->
+
+                        <!-- 1. HbA1c -->
+                        <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                            <div class="col-span-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 flex-shrink-0">
+                                    <i class="fas fa-tint"></i>
+                                </div>
+                                <span class="font-medium text-gray-700">HbA1c</span>
+                                <i class="fas fa-info-circle text-blue-400 text-xs cursor-help"
+                                    title="Hémoglobine Glyquée - Trimestriel"></i>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center" id="container-hba1c-last">
+                                <select
+                                    class="exam-month-select w-20 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="hba1c" data-type="last" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="hba1c" data-type="last" data-part="year"></select>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center" id="container-hba1c-next">
+                                <select
+                                    class="exam-month-select w-20 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="hba1c" data-type="next" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="hba1c" data-type="next" data-part="year"></select>
+                            </div>
+                            <div class="col-span-1 text-center justify-center items-center flex" id="status-hba1c">
+                                <span class="text-gray-300">--</span>
+                            </div>
+                        </div>
+
+                        <!-- 2. Bilan Lipidique -->
+                        <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                            <div class="col-span-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-500 flex-shrink-0">
+                                    <i class="fas fa-vial"></i>
+                                </div>
+                                <span class="font-medium text-gray-700">Bilan Lipidique</span>
+                                <i class="fas fa-info-circle text-blue-400 text-xs cursor-help"
+                                    title="Cholestérol, Triglycérides - Annuel"></i>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="lipids" data-type="last" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="lipids" data-type="last" data-part="year"></select>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="lipids" data-type="next" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="lipids" data-type="next" data-part="year"></select>
+                            </div>
+                            <div class="col-span-1 text-center justify-center items-center flex" id="status-lipids">
+                                <span class="text-gray-300">--</span>
+                            </div>
+                        </div>
+
+                        <!-- 3. RAC -->
+                        <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                            <div class="col-span-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 flex-shrink-0">
+                                    <i class="fas fa-tint"></i> <!-- Drop icon -->
+                                </div>
+                                <span class="font-medium text-gray-700">RAC</span>
+                                <i class="fas fa-info-circle text-blue-400 text-xs cursor-help"
+                                    title="Ratio Albumine/Créatinine - Annuel"></i>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="rac" data-type="last" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="rac" data-type="last" data-part="year"></select>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="rac" data-type="next" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="rac" data-type="next" data-part="year"></select>
+                            </div>
+                            <div class="col-span-1 text-center justify-center items-center flex" id="status-rac">
+                                <span class="text-gray-300">--</span>
+                            </div>
+                        </div>
+
+                        <!-- 4. ECG -->
+                        <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                            <div class="col-span-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-500 flex-shrink-0">
+                                    <i class="fas fa-heartbeat"></i>
+                                </div>
+                                <span class="font-medium text-gray-700">ECG</span>
+                                <i class="fas fa-info-circle text-blue-400 text-xs cursor-help"
+                                    title="ECG de repos - Annuel ou tous les 3 ans selon risque"></i>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="ecg" data-type="last" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="ecg" data-type="last" data-part="year"></select>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="ecg" data-type="next" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="ecg" data-type="next" data-part="year"></select>
+                            </div>
+                            <div class="col-span-1 text-center justify-center items-center flex" id="status-ecg">
+                                <span class="text-gray-300">--</span>
+                            </div>
+                        </div>
+
+                        <!-- 5. Pieds -->
+                        <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                            <div class="col-span-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 flex-shrink-0">
+                                    <i class="fas fa-shoe-prints"></i>
+                                </div>
+                                <span class="font-medium text-gray-700">Examen des Pieds</span>
+                                <i class="fas fa-info-circle text-blue-400 text-xs cursor-help"
+                                    title="Test au monofilament / Podologue - Annuel"></i>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="feet" data-type="last" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="feet" data-type="last" data-part="year"></select>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="feet" data-type="next" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="feet" data-type="next" data-part="year"></select>
+                            </div>
+                            <div class="col-span-1 text-center justify-center items-center flex" id="status-feet">
+                                <span class="text-gray-300">--</span>
+                            </div>
+                        </div>
+
+                        <!-- 6. Dentiste -->
+                        <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                            <div class="col-span-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 flex-shrink-0">
+                                    <i class="fas fa-tooth"></i>
+                                </div>
+                                <span class="font-medium text-gray-700">Dentiste</span>
+                                <i class="fas fa-info-circle text-blue-400 text-xs cursor-help"
+                                    title="Bilan bucco-dentaire - Annuel"></i>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="dental" data-type="last" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="dental" data-type="last" data-part="year"></select>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="dental" data-type="next" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="dental" data-type="next" data-part="year"></select>
+                            </div>
+                            <div class="col-span-1 text-center justify-center items-center flex" id="status-dental">
+                                <span class="text-gray-300">--</span>
+                            </div>
+                        </div>
+
+                        <!-- 7. Ophtalmo -->
+                        <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                            <div class="col-span-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0">
+                                    <i class="fas fa-eye"></i>
+                                </div>
+                                <span class="font-medium text-gray-700">Ophtalmo</span>
+                                <i class="fas fa-info-circle text-blue-400 text-xs cursor-help"
+                                    title="Fond d'œil / Rétinographie - Bisannuel si pas de rétinopathie"></i>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="eyes" data-type="last" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-white border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="eyes" data-type="last" data-part="year"></select>
+                            </div>
+                            <div class="col-span-4 flex gap-2 justify-center">
+                                <select
+                                    class="exam-month-select w-20 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="eyes" data-type="next" data-part="month"></select>
+                                <select
+                                    class="exam-year-select w-24 bg-gray-100 border border-gray-200 rounded-md text-sm py-1 px-2"
+                                    data-exam="eyes" data-type="next" data-part="year"></select>
+                            </div>
+                            <div class="col-span-1 text-center justify-center items-center flex" id="status-eyes">
+                                <span class="text-gray-300">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Exams Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-800">Autres Examens et Consultations</h3>
+                        <button id="btn-add-other-exam"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Ajouter
+                        </button>
+                    </div>
+
+                    <!-- Add Form -->
+                    <div id="add-other-exam-form"
+                        class="hidden bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 animate-fade-in">
+                        <div class="grid grid-cols-12 gap-4 items-end">
+                            <div class="col-span-3">
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Type d'examen /
+                                    consultation</label>
+                                <select id="other-exam-type"
+                                    class="w-full bg-white border border-gray-200 rounded-lg text-sm p-2">
+                                    <option value="">Sélectionner...</option>
+                                    <option value="Consultation Cardiologue">Consultation Cardiologue</option>
+                                    <option value="Consultation Endocrinologue">Consultation Endocrinologue</option>
+                                    <option value="Consultation Neurologue">Consultation Neurologue</option>
+                                    <option value="Consultation Néphrologue">Consultation Néphrologue</option>
+                                    <option value="Consultation Pneumologue">Consultation Pneumologue</option>
+                                    <option value="Consultation Podologue">Consultation Podologue</option>
+                                    <option value="Épreuve d'effort (ECG)">Épreuve d'effort (ECG)</option>
+                                    <option value="Échographie d'effort">Échographie d'effort</option>
+                                    <option value="Scintigraphie d'efforts">Scintigraphie d'efforts</option>
+                                    <option value="Coroscanner">Coroscanner</option>
+                                    <option value="Score Calcique">Score Calcique</option>
+                                    <option value="Coronarographie">Coronarographie</option>
+                                    <option value="Échographie Cardiaque">Échographie Cardiaque</option>
+                                    <option value="Holter ECG">Holter ECG</option>
+                                    <option value="Échos Doppler Tronc Supra-Aortique">Échos Doppler Tronc
+                                        Supra-Aortique</option>
+                                    <option value="Échos Doppler Membres Inférieurs">Échos Doppler Membres Inférieurs
+                                    </option>
+                                    <option value="Mesure de l'IPS">Mesure de l'IPS</option>
+                                </select>
+                            </div>
+                            <div class="col-span-3">
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Date de
+                                    réalisation</label>
+                                <div class="flex gap-2">
+                                    <select id="other-exam-month"
+                                        class="w-20 bg-white border border-gray-200 rounded-lg text-sm p-2"></select>
+                                    <select id="other-exam-year"
+                                        class="w-24 bg-white border border-gray-200 rounded-lg text-sm p-2"></select>
+                                </div>
+                            </div>
+                            <div class="col-span-4">
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Résultats en très
+                                    bref</label>
+                                <input type="text" id="other-exam-result"
+                                    class="w-full bg-white border border-gray-200 rounded-lg text-sm p-2"
+                                    placeholder="Résultats...">
+                            </div>
+                            <div class="col-span-2 flex gap-2">
+                                <button id="btn-confirm-add-exam"
+                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm p-2 transition-colors"
+                                    title="Valider">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button id="btn-cancel-add-exam"
+                                    class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg text-sm p-2 transition-colors"
+                                    title="Annuler">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-gray-600">
+                            <thead class="bg-gray-100 text-xs uppercase font-semibold text-gray-500">
+                                <tr>
+                                    <th class="px-4 py-3 rounded-l-lg">Examen / Consultation</th>
+                                    <th class="px-4 py-3 text-center">Date Réalisation</th>
+                                    <th class="px-4 py-3 text-left">Résultats</th>
+                                    <th class="px-4 py-3 text-right rounded-r-lg">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="other-exams-table" class="divide-y divide-gray-100">
+                                <!-- Populated by JS -->
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8 text-center text-gray-400 italic">
+                                        Aucun examen manuel enregistré.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: TREATMENTS -->
+        <div id="view-treatments" class="view-section hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-7xl mx-auto space-y-6">
+                <h3 class="text-xl font-bold text-gray-800">Traitements</h3>
+
+                <div class="mb-8">
+
+                    <!-- Search Section -->
+                    <div class="relative z-50">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Rechercher un traitement (DCI ou
+                            Nom Commercial)</label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-grow">
+                                <input type="text" id="treatment-search"
+                                    class="w-full bg-white border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all text-gray-800 placeholder-gray-400"
+                                    placeholder="Ex: Metformine, Ozempic..." autocomplete="off">
+
+                                <!-- Autocomplete Dropdown -->
+                                <div id="treatment-suggestions"
+                                    class="hidden absolute top-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-64 overflow-y-auto divide-y divide-gray-100">
+                                </div>
+                            </div>
+
+                            <button id="btn-copy-prescription"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 flex-shrink-0">
+                                <i class="fas fa-copy"></i> Copier
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Prescriptions -->
+                <div>
+                    <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Prescriptions Actives</h4>
+                    <div class="overflow-x-visible border border-gray-200 rounded-lg bg-white min-h-[200px]">
+                        <table class="w-full text-left text-sm table-fixed">
+                            <thead class="bg-gray-50 text-gray-600 font-semibold uppercase text-xs">
+                                <tr>
+                                    <th class="px-4 py-3 w-[35%]">Molécule (DCI / Commercial)</th>
+                                    <th class="px-4 py-3 w-[20%]">Posologie</th>
+                                    <th class="px-4 py-3 w-[15%]">Unité</th>
+                                    <th class="px-4 py-3 w-[15%]">Schéma</th>
+                                    <th class="px-4 py-3 w-[15%] text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="treatments-table-body" class="divide-y divide-gray-100">
+                                <!-- Populated by JS -->
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-gray-400 italic">
+                                        Aucune prescription active.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="view-education" class="view-section hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-7xl mx-auto space-y-8">
+                <h3 class="text-xl font-bold text-gray-800">Synthèse Éducative & Plan d'ETP</h3>
+
+                <div class="grid grid-cols-12 gap-8">
+                    <!-- A. Diagnostic -->
+                    <div class="col-span-12 md:col-span-6">
+                        <h4 class="font-bold text-blue-800 mb-4 border-b border-blue-200 pb-2">A. Diagnostic Éducatif
+                            Partagé</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Dimension Biomédicale (Ce
+                                    que le patient sait)</label>
+                                <textarea id="diag-bio"
+                                    class="w-full h-20 p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 resize-none education-input"
+                                    data-field="bio"
+                                    placeholder="Connaissances de la maladie, du traitement..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Dimension Psycho-affective
+                                    (Ce que le patient ressent)</label>
+                                <textarea id="diag-psycho"
+                                    class="w-full h-20 p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 resize-none education-input"
+                                    data-field="psycho" placeholder="Croyances, émotions, vécu..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Dimension
+                                    Socio-Professionnelle (Contexte de vie)</label>
+                                <textarea id="diag-social"
+                                    class="w-full h-20 p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 resize-none education-input"
+                                    data-field="social"
+                                    placeholder="Situation familiale, ressources, freins..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Attentes et Besoins du
+                                    Patient</label>
+                                <textarea id="diag-needs"
+                                    class="w-full h-20 p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 resize-none education-input"
+                                    data-field="needs"
+                                    placeholder="Qu'est-ce que le patient souhaite apprendre ?"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- B. Competencies -->
+                    <div class="col-span-12 md:col-span-6 flex flex-col">
+                        <h4 class="font-bold text-blue-800 mb-4 border-b border-blue-200 pb-2">B. Compétences &
+                            Objectifs</h4>
+                        <div id="competencies-list" class="flex-1 flex flex-col justify-between gap-1">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- C. Plan -->
+                <div>
+                    <h4 class="font-bold text-blue-800 mb-4 border-b border-blue-200 pb-2">C. Plan d'Éducation
+                        Personnalisé</h4>
+                    <div class="overflow-x-visible border border-gray-200 rounded-lg bg-white min-h-[200px]">
+                        <table class="w-full text-left text-sm table-fixed">
+                            <thead class="bg-gray-50 text-gray-600 font-semibold uppercase text-xs">
+                                <tr>
+                                    <th class="px-4 py-3 w-[5%] text-center">Fait</th>
+                                    <th class="px-4 py-3 w-[5%] text-center">Sujet</th>
+                                    <th class="px-4 py-3 w-[20%]">Date</th>
+                                    <th class="px-4 py-3 w-[30%]">Séance</th>
+                                    <th class="px-4 py-3 w-[35%]">Observations</th>
+                                    <th class="px-4 py-3 w-[5%] text-right"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="education-plan-body" class="divide-y divide-gray-100">
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-gray-400 italic">Aucune séance
+                                        planifiée. Cliquez sur les boutons "+" ci-dessus pour commencer.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- VIEW: SYNTHESIS (Spiderweb) -->
+        <!-- Absolute Inset to cover parent padding completely, White BG -->
+        <div id="view-synthesis" class="view-section hidden">
+            <!-- Card Container (Matches Education/Identity style) -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-7xl mx-auto space-y-6">
+
+                <!-- Page Header -->
+                <h3 class="text-xl font-bold text-gray-800">Synthèse Clinique</h3>
+
+                <!-- 1. Top Module -->
+                <div id="objectives-module">
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-gray-100 text-gray-600 font-semibold uppercase text-xs">
+                                <tr>
+                                    <th class="px-4 py-3 w-[20%]">Marqueur</th>
+                                    <th class="px-4 py-3 w-[20%]">Cible Personnalisée</th>
+                                    <th class="px-4 py-3 w-[15%] text-center">Valeur Actuelle</th>
+                                    <th class="px-4 py-3 w-[15%] text-center">Valeur Antérieure</th>
+                                    <th class="px-4 py-3 w-[15%] text-center">Tendance</th>
+                                    <th class="px-4 py-3 w-[15%] text-center">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="objectives-table-body" class="divide-y divide-gray-100 bg-white">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. Bottom Chart: Flexible Height (flex-1) -->
+                <div class="w-full flex flex-col items-center pt-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 flex-none">Blob du patient</h3>
+
+                    <!-- Chart Wrapper: Best-fit Square (max-w-600 OR max-h-available) -->
+                    <!-- flex-none to respect aspect ratio, max-h-full to prevent overflow -->
+                    <div class="relative w-full max-w-[600px] aspect-square max-h-full flex-none">
+                        <canvas id="synthesis-chart" class="absolute inset-0"></canvas>
+                    </div>
+
+                    <div class="mt-2 text-xs text-gray-400 italic text-center max-w-lg flex-none pb-2">
+                        Ce graphique projette les dernières données connues par rapport aux objectifs cibles.
+                    </div>
+                </div> <!-- Close Chart Container -->
+            </div> <!-- Close Card -->
+        </div> <!-- Close view-synthesis -->
+        <!-- VIEW: ETP LIBRARY (Back-office) -->
+        <div id="view-etp-library" class="view-section hidden p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+                <!-- Header & Actions -->
+                <div class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Bibliothèque ETP</h2>
+                        <p class="text-gray-500 text-sm">Gérez ici le référentiel des séances disponibles pour les
+                            patients.</p>
+                    </div>
+                    <button
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
+                        id="btn-new-etp-session">
+                        <i class="fas fa-plus"></i> Nouvelle Séance
+                    </button>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="inp-etp-search"
+                            class="w-full pl-12 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all text-sm"
+                            style="padding-left: 3rem;" placeholder="Rechercher par référence, titre, catégorie...">
+                    </div>
+                </div>
+
+                <!-- Sessions Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase w-16 cursor-pointer hover:bg-gray-100 transition-colors"
+                                    id="sort-etp-id">
+                                    Réf. <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase w-48 cursor-pointer hover:bg-gray-100 transition-colors"
+                                    id="sort-etp-category">
+                                    Catégorie <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase cursor-pointer hover:bg-gray-100 transition-colors"
+                                    id="sort-etp-title">
+                                    Intitulé <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase w-24 cursor-pointer hover:bg-gray-100 transition-colors"
+                                    id="sort-etp-mode">
+                                    Mode <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                </th>
+                                <th class="px-4 py-3 font-semibold text-gray-600 text-xs uppercase text-right w-24">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-etp-sessions" class="divide-y divide-gray-100">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        </div> <!-- Close content-area -->
+
+    </main>
+
+    <!-- MODAL: ETP SESSION EDITOR -->
+    <div id="modal-etp-session" class="modal hidden">
+        <div class="modal-content max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800" id="modal-etp-title">Nouvelle Séance</h3>
+                <span class="close-button text-gray-400 hover:text-gray-600 cursor-pointer text-2xl"
+                    id="close-modal-etp">&times;</span>
+            </div>
+
+            <form id="form-etp-session" class="space-y-4">
+                <input type="hidden" id="inp-etp-id">
+
+                <!-- Row 1: Code & Title -->
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="col-span-1">
+                        <div class="input-wrapper">
+                            <input type="text" id="inp-etp-custom-id" class="floating-input" placeholder=" " required>
+                            <label class="floating-label">Code Séance</label>
+                        </div>
+                    </div>
+                    <div class="col-span-3">
+                        <div class="input-wrapper">
+                            <input type="text" id="inp-etp-title" class="floating-input" placeholder=" " required>
+                            <label class="floating-label">Intitulé de la séance</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category & Mode Row -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Catégorie</label>
+                        <select id="inp-etp-category"
+                            class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-sm focus:border-blue-500 outline-none">
+                            <option value="Alimentation Saine">Alimentation Saine</option>
+                            <option value="Activité Physique">Activité Physique</option>
+                            <option value="Autosurveillance">Autosurveillance</option>
+                            <option value="Traitement Médicamenteux">Traitement Médicamenteux</option>
+                            <option value="Résolution de Problèmes">Résolution de Problèmes</option>
+                            <option value="Compétences d'Adaptation">Compétences d'Adaptation</option>
+                            <option value="Réduction des Risques">Réduction des Risques</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Mode</label>
+                        <select id="inp-etp-mode"
+                            class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-sm focus:border-blue-500 outline-none">
+                            <option value="Individuel">Individuel</option>
+                            <option value="Collectif">Collectif</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- NEW: Educational Objectives -->
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Objectifs éducatifs</label>
+                    <textarea id="inp-etp-objectives" rows="3"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 outline-none text-sm"
+                        placeholder="Ex: Comprendre le mécanisme de l'insuline..."></textarea>
+                </div>
+
+                <!-- Prerequisites -->
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Prérequis éducatif</label>
+                    <textarea id="inp-etp-prerequisites" rows="2"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 outline-none text-sm"
+                        placeholder="Ex: Connaissances de base sur..."></textarea>
+                </div>
+
+                <!-- Pedagogical Content -->
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Contenu pédagogique</label>
+                    <textarea id="inp-etp-content" rows="3"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 outline-none text-sm"
+                        placeholder="Ex: Apprendre à lire les étiquettes..."></textarea>
+                </div>
+
+                <!-- Supports -->
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Supports / Outils</label>
+                    <textarea id="inp-etp-supports" rows="2"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 outline-none text-sm"
+                        placeholder="Ex: Flyer, carnet de suivi..."></textarea>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3" id="etp-modal-actions">
+                    <button type="button" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        id="btn-cancel-etp">Annuler</button>
+                    <button type="submit"
+                        class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors"
+                        id="btn-save-etp">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="notification-container"></div>
+
+    <script src="calculations.js"></script>
+    <script src="data/medications.js"></script>
+    <script src="data/education_topics.js"></script>
+    <script src="renderer.js"></script>
+</body>
+
+</html>

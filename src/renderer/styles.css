@@ -1,0 +1,358 @@
+/* Custom Styles for Diabetes Desktop App */
+
+/* --- Floating Label Inputs --- */
+.input-group-title {
+    font-size: 0.875rem;
+    /* text-sm */
+    font-weight: 600;
+    color: #4b5563;
+    /* text-gray-600 */
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+
+    justify-content: center !important;
+    /* Center Titles */
+    gap: 0.5rem;
+    min-height: 2rem;
+    /* Fix Alignment: Force same height regardless of Convert button */
+}
+
+.input-group-container {
+    display: flex;
+    gap: 0 !important;
+    /* FORCE removal of gaps (overrides Tailwind gap-2) */
+    align-items: flex-end;
+}
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Fused Input Styling - Standard Groups */
+.input-group-container .input-wrapper:only-child .floating-input {
+    border-radius: 0.5rem !important;
+    /* Fix Glycemie: Single inputs get full radius */
+    border: 1px solid #e5e7eb;
+}
+
+.input-group-container .input-wrapper:first-child:not(:only-child) .floating-input {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.input-group-container .input-wrapper:not(:first-child):not(:last-child) .floating-input {
+    border-radius: 0 !important;
+    margin-left: -1px;
+}
+
+.input-group-container .input-wrapper:last-child:not(:only-child) .floating-input {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    margin-left: -1px;
+}
+
+/* SCORE2 Specific Fusion */
+/* The SCORE2 input is #bio-score2d, followed immediately by #score2d-status-btn */
+#bio-score2d {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+#score2d-status-btn {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    margin-left: -1px;
+    height: auto;
+    /* Let flex determine */
+    border-left: 1px solid #e5e7eb;
+    /* Ensure visual border merges well */
+    /* Ensure button has same visual height */
+    align-self: stretch;
+}
+
+
+/* Floating Input Fields */
+.floating-input {
+    display: block;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    padding-top: 1.25rem !important;
+    /* Space for label */
+    padding-bottom: 0.625rem !important;
+    /* Increased padding */
+    min-height: 3.5rem;
+    /* Increased Height (56px) */
+    font-size: 0.875rem;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    /* gray-200 */
+    border-radius: 0.5rem;
+    appearance: none;
+    line-height: 1.25;
+    position: relative;
+    /* For z-index to work */
+}
+
+.floating-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    /* blue-500 */
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    z-index: 10;
+}
+
+.floating-input.is-calculated {
+    background-color: #f9fafb;
+    /* gray-50 */
+    color: #4b5563;
+    cursor: default;
+}
+
+
+.floating-label {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.75rem;
+    font-size: 0.75rem !important;
+    /* Smaller float size */
+    color: #6b7280;
+    /* gray-500 */
+    transition: all 0.2s ease-out;
+    pointer-events: none;
+    z-index: 11;
+    /* Above input border if overlapping */
+
+    /* Force Single Line */
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: calc(100% - 1.5rem);
+    /* Ensure it doesn't overflow container */
+}
+
+/* Floating Label Logic using placeholder-shown */
+.floating-input:placeholder-shown+.floating-label {
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem !important;
+    /* Smaller placeholder size */
+    color: #9ca3af;
+    /* gray-400 */
+}
+
+.floating-input:focus+.floating-label,
+.floating-input:not(:placeholder-shown)+.floating-label {
+    top: 0.25rem;
+    transform: translateY(0);
+    font-size: 0.70rem !important;
+    /* Even smaller when floating */
+    color: #3b82f6;
+}
+
+/* --- Unit Toggles --- */
+.unit-toggle {
+    font-size: 0.70rem;
+    padding: 2px 6px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.unit-toggle:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+/* --- Modals --- */
+.modal {
+    position: fixed;
+    z-index: 50;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 2rem;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* --- View Transitions --- */
+.view-section {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* --- Education Module Inputs --- */
+.education-input {
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* --- Animations --- */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+}
+
+
+/* --- History Table --- */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed !important;
+    /* Force equal columns */
+}
+
+/* Container for scrolling */
+/* Container for scrolling */
+.history-table-container {
+    overflow-x: hidden !important;
+    /* Hide scrollbar, force fit */
+    width: 100%;
+    /* Limit to ~7 rows. Row height ~40px + Header ~30px = ~310px. Let's try 300px */
+    max-height: 300px;
+    overflow-y: auto !important;
+    /* Enable vertical scroll */
+    border-bottom: 1px solid #e5e7eb;
+    /* Visual bottom boundary */
+}
+
+.history-table th,
+.history-table td {
+    padding: 0rem 0.25rem !important;
+    /* Reduced vertical padding */
+    text-align: center !important;
+    white-space: nowrap !important;
+    font-size: 0.70rem !important;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+    height: 40px !important;
+    /* Fixed Height matching icon size */
+}
+
+/* Sticky Header */
+.history-table th {
+    position: sticky !important;
+    top: 0;
+    z-index: 20;
+    /* Ensure above content */
+    background-color: #f9fafb;
+    /* Ensure opaque background */
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #4b5563;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.05em;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    /* Subtle shadow for sticky effect */
+}
+
+.history-table tr:hover td {
+    background-color: #f0fdf4;
+    /* Very slight green tint on hover for tracking */
+}
+
+/* Actions Column Alignment */
+.history-table td:last-child {
+    text-align: right !important;
+    /* Actions usually look better right aligned, but user said "center results". Actions aren't results. I'll stick to center unless it looks bad. Let's force center per instruction "center results" and "cleaner table" usually implies uniformity. */
+    text-align: center !important;
+}
+
+.history-table th {
+    background-color: #f9fafb;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #4b5563;
+    font-size: 0.70rem !important;
+    /* Even smaller for headers */
+    letter-spacing: 0.05em;
+}
+
+.history-table tr:hover td {
+    background-color: #f0fdf4;
+    /* Very slight green tint on hover for tracking */
+}
+
+/* Actions Column Alignment */
+.history-table td:last-child {
+    text-align: right !important;
+    /* Actions usually look better right aligned, but user said "center results". Actions aren't results. I'll stick to center unless it looks bad. Let's force center per instruction "center results" and "cleaner table" usually implies uniformity. */
+    text-align: center !important;
+}

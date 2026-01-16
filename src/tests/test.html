@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>DB Test</title>
+</head>
+
+<body>
+    <h1>Running DB Tests...</h1>
+    <div id="output"></div>
+    <script>
+        const output = document.getElementById('output');
+        function log(msg, isError = false) {
+            const div = document.createElement('div');
+            div.textContent = msg;
+            div.style.color = isError ? 'red' : 'green';
+            output.appendChild(div);
+            console.log(msg);
+            if (window.electronAPI && window.electronAPI.log) {
+                window.electronAPI.log(msg);
+            }
+        }
+
+        async function runTests() {
+            try {
+                log('Starting Tests...');
+
+                // 1. Create Patient
+                const patient = { firstName: 'Test', lastName: 'User', birthDate: '2000-01-01' };
+                log('Creating patient...');
+                const id = await window.electronAPI.createPatient(patient);
+                log('Patient created with ID: ' + id);
+
+                // 2. Get Patient
+                log('Fetching patient...');
+                const fetched = await window.electronAPI.getPatient(id);
+                log('Fetched: ' + JSON.stringify(fetched));
+
+                if (fetched.firstName === 'Test') {
+                    log('SUCCESS: Patient matches.');
+                } else {
+                    log('FAILURE: Patient mismatch.', true);
+                }
+
+                // 3. Get All
+                const all = await window.electronAPI.getPatients();
+                log('All patients count: ' + all.length);
+
+            } catch (err) {
+                log('ERROR: ' + err.message, true);
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+
+</html>
