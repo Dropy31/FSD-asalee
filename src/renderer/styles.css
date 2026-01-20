@@ -423,3 +423,18 @@
     color: #4b5563;
     line-height: 1.25;
 }
+
+/* --- Table Hover Actions (ETP & Pharma) --- */
+/* Target the buttons inside the last column of the table rows */
+/* Assuming tables have IDs table-etp-library and table-pharma-book */
+
+#table-etp-library tr button,
+#table-pharma-book tr button {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#table-etp-library tr:hover button,
+#table-pharma-book tr:hover button {
+    opacity: 1;
+}

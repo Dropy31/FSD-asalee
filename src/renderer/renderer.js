@@ -20,15 +20,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const pageTitle = document.getElementById('page-title');
 
     const viewTitles = {
-        'dashboard': 'Tableau de Bord',
-        'identity': 'Identité & Informations',
+        'dashboard': 'Patients',
+        'identity': 'Profil',
         'risks': 'Profil de Risque & Complications',
         'followup': 'Suivi Biologique',
-        'exams': 'Suivi des Examens',
-        'treatments': 'Module Thérapeutique',
-        'education': 'Synthèse Éducative',
-        'synthesis': 'Synthèse Clinique',
-        'etp-library': 'Bibliothèque ETP',
+        'exams': 'Examens',
+        'treatments': 'Traitements',
+        'education': 'ETP',
+        'synthesis': 'Synthèse',
+        'etp-library': 'Bibliothèque',
         'pharma-book': 'Livret Pharmaceutique'
     };
 
