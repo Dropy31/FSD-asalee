@@ -4,51 +4,44 @@ const path = require('path');
 const { app } = require('electron');
 
 const ALGORITHM = 'aes-256-cbc';
-const KEY_FILENAME = 'secret.key';
-
+// In-memory key storage. NEVER write this variable to disk.
 let encryptionKey = null;
 
-function getUserDataPath() {
-    if (app) {
-        return app.getPath('userData');
+function setMasterKey(keyBuffer) {
+    if (!Buffer.isBuffer(keyBuffer) || keyBuffer.length !== 32) {
+        throw new Error('Invalid key length. Must be 32 bytes buffer.');
     }
-    return __dirname; // Fallback for testing
+    encryptionKey = keyBuffer;
 }
 
-function loadOrGenerateKey() {
-    if (encryptionKey) return encryptionKey;
-
-    const keyPath = path.join(getUserDataPath(), KEY_FILENAME);
-
-    if (fs.existsSync(keyPath)) {
-        encryptionKey = fs.readFileSync(keyPath);
-    } else {
-        encryptionKey = crypto.randomBytes(32);
-        fs.writeFileSync(keyPath, encryptionKey);
+function getKey() {
+    if (!encryptionKey) {
+        throw new Error('Encryption key not initialized. Please log in first.');
     }
     return encryptionKey;
 }
 
 function encrypt(text) {
-    const key = loadOrGenerateKey();
+    const key = getKey();
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(key), iv);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     return { iv: iv.toString('hex'), encryptedData: encrypted.toString('hex') };
 }
 
 function decrypt(text) {
-    const key = loadOrGenerateKey();
+    const key = getKey();
     const iv = Buffer.from(text.iv, 'hex');
     const encryptedText = Buffer.from(text.encryptedData, 'hex');
-    const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(key), iv);
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     let decrypted = decipher.update(encryptedText);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
 }
 
 module.exports = {
+    setMasterKey,
     encrypt,
     decrypt
 };

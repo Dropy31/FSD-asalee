@@ -20,5 +20,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getMedications: () => ipcRenderer.invoke('db:get-medications'),
     createMedication: (data) => ipcRenderer.invoke('db:create-medication', data),
     updateMedication: (id, data) => ipcRenderer.invoke('db:update-medication', id, data),
-    deleteMedication: (id) => ipcRenderer.invoke('db:delete-medication', id)
+    deleteMedication: (id) => ipcRenderer.invoke('db:delete-medication', id),
+    // Auth API
+    getAuthStatus: () => ipcRenderer.invoke('auth:status'),
+    login: (password) => ipcRenderer.invoke('auth:login', password),
+    register: (password) => ipcRenderer.invoke('auth:register', password),
+    migrate: (password) => ipcRenderer.invoke('auth:migrate', password),
+    reset: () => ipcRenderer.invoke('auth:reset')
 });

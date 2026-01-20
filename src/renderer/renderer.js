@@ -1787,8 +1787,9 @@ function renderEvolutionChart(history) {
                 label: 'PAS (mmHg)',
                 data: sortedHistory.map(h => h.sys),
                 borderColor: '#ef4444', // Red
-                backgroundColor: 'transparent',
+                backgroundColor: createGradient(chartCtx, '#ef4444'),
                 tension: 0.4,
+                fill: true,
                 yAxisID: 'y',
                 pointRadius: 3,
                 spanGaps: true
@@ -1797,8 +1798,9 @@ function renderEvolutionChart(history) {
                 label: 'PAD (mmHg)',
                 data: sortedHistory.map(h => h.dia),
                 borderColor: '#3b82f6', // Blue
-                backgroundColor: 'transparent', // No fill for clear dual lines
+                backgroundColor: createGradient(chartCtx, '#3b82f6'),
                 tension: 0.4,
+                fill: true,
                 yAxisID: 'y',
                 pointRadius: 3,
                 spanGaps: true
@@ -1965,7 +1967,9 @@ function renderEvolutionChart(history) {
                 label: 'LDLc',
                 data: sortedHistory.map(h => h.ldl), // Note: stored as base g/L
                 borderColor: '#ef4444', // Red (Bad)
+                backgroundColor: createGradient(chartCtx, '#ef4444'),
                 tension: 0.3,
+                fill: true,
                 borderWidth: 2,
                 pointRadius: 3,
                 spanGaps: true
@@ -1974,7 +1978,9 @@ function renderEvolutionChart(history) {
                 label: 'HDL',
                 data: sortedHistory.map(h => h.hdl),
                 borderColor: '#10b981', // Green (Good)
+                backgroundColor: createGradient(chartCtx, '#10b981'),
                 tension: 0.3,
+                fill: true,
                 borderWidth: 2,
                 pointRadius: 3,
                 spanGaps: true
@@ -1983,7 +1989,9 @@ function renderEvolutionChart(history) {
                 label: 'TG',
                 data: sortedHistory.map(h => h.tg),
                 borderColor: '#f59e0b', // Orange
+                backgroundColor: createGradient(chartCtx, '#f59e0b'),
                 tension: 0.3,
+                fill: true,
                 borderWidth: 2,
                 pointRadius: 3,
                 spanGaps: true
@@ -1992,7 +2000,9 @@ function renderEvolutionChart(history) {
                 label: 'CT',
                 data: sortedHistory.map(h => h.ct),
                 borderColor: '#6b7280', // Gray
+                backgroundColor: createGradient(chartCtx, '#6b7280'),
                 tension: 0.3,
+                fill: true,
                 borderWidth: 1,
                 borderDash: [2, 2], // Dashed for Total
                 pointRadius: 2,

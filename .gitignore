@@ -5,3 +5,6 @@ out
 .env
 electron-dist/
 diabetes.db
+security.json
+secret.key
+# Key is now in memory, but ignore legacy/config files
