@@ -2735,6 +2735,8 @@ function initTreatmentsModule() {
             }
         });
     }
+
+    initAllergiesModule();
 }
 
 // Add Treatment
@@ -2752,7 +2754,8 @@ async function addTreatment(med) {
         dosages: med.dosages, // Store available dosages for dropdown
         dosage: med.dosages[0] || '',
         unit: '1 cp',
-        frequency: '1x /J'
+        frequency: '1x /J',
+        class: med.class || ''
     };
 
     currentPatient.treatments.push(newTreatment);
@@ -2791,6 +2794,14 @@ function renderTreatmentsList() {
         // Freq Options
         const freqOpts = freqs.map(f => `<option value="${f}" ${f === t.frequency ? 'selected' : ''}>${f}</option>`).join('');
 
+        // Lookup class if missing (Retroactive fix)
+        let medClass = t.class;
+        if (!medClass && window.MEDICATIONS_DB) {
+            // Try to match name against DB
+            const match = window.MEDICATIONS_DB.find(m => t.name.includes(m.commercialName) || t.name.includes(m.dci));
+            if (match) medClass = match.class;
+        }
+
         row.innerHTML = `
             <td class="px-4 py-3 font-medium text-gray-800">${t.name}</td>
             <td class="px-4 py-3">
@@ -2808,7 +2819,8 @@ function renderTreatmentsList() {
                     ${freqOpts}
                 </select>
             </td>
-            <td class="px-4 py-3 text-right flex justify-end gap-2">
+            <td class="px-4 py-3 text-right flex justify-end gap-2 items-center">
+                ${medClass ? `<button class="text-blue-400 hover:text-blue-600 px-1 cursor-help" title="Classe: ${medClass}"><i class="fas fa-info-circle"></i></button>` : ''}
                 <button class="text-gray-400 hover:text-blue-600 px-1" onclick="moveTreatment('${t.id}', -1)" title="Monter"><i class="fas fa-chevron-up"></i></button>
                 <button class="text-gray-400 hover:text-blue-600 px-1" onclick="moveTreatment('${t.id}', 1)" title="Descendre"><i class="fas fa-chevron-down"></i></button>
                 <button class="text-red-400 hover:text-red-600 px-1 ml-2" onclick="deleteTreatment('${t.id}')" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
@@ -2878,6 +2890,7 @@ async function saveTreatmentsData(notify = true) {
 function loadTreatmentsData(data) {
     if (!currentPatient.treatments) currentPatient.treatments = data || [];
     renderTreatmentsList();
+    renderAllergiesAndIntolerances();
 }
 
 // Integration Glue Removed (Now integrated in openPatientHandler)
@@ -3965,7 +3978,7 @@ async function loadEtpLibrary() {
 }
 
 function renderEtpLibraryTable() {
-    const tbody = document.getElementById('table-etp-sessions');
+    const tbody = document.getElementById('table-etp-library');
     if (!tbody) return;
     tbody.innerHTML = '';
 
@@ -4164,3 +4177,152 @@ document.addEventListener('DOMContentLoaded', () => {
     initEtpLibrary();
     initEducationModule(); // Ensure Education Dashboard renders empty/placeholder if no patient open, or sets up listeners
 });
+
+// --- ALLERGIES & INTOLERANCES MODULE ---
+
+function initAllergiesModule() {
+    const searchInput = document.getElementById('allergy-search');
+    const suggestionsBox = document.getElementById('allergy-suggestions');
+
+    // Search Logic
+    if (searchInput && suggestionsBox) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+
+            if (query.length < 2) {
+                suggestionsBox.classList.add('hidden');
+                suggestionsBox.innerHTML = '';
+                return;
+            }
+
+            // Filter medications (Reuse MEDICATIONS_DB)
+            const matches = window.MEDICATIONS_DB ? window.MEDICATIONS_DB.filter(m =>
+                m.dci.toLowerCase().includes(query) ||
+                m.commercialName.toLowerCase().includes(query)
+            ).slice(0, 20) : [];
+
+            if (matches.length === 0) {
+                suggestionsBox.classList.add('hidden');
+                return;
+            }
+
+            // Render suggestions
+            const html = matches.map((m, index) => {
+                const displayName = `${m.commercialName} (${m.dci})`;
+                // Escape quotes for safety
+                const safeName = displayName.replace(/'/g, "&#39;");
+                return `
+                <div class="px-4 py-2 hover:bg-gray-50 flex justify-between items-center border-b border-gray-50 last:border-0 group">
+                    <div class="text-sm font-medium text-gray-700">${m.commercialName} <span class="text-xs font-normal text-gray-500">(${m.dci})</span></div>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition-colors" 
+                                title="Ajouter aux Allergies" onclick="addAllergy('${safeName}', 'allergy')">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </button>
+                        <button class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 hover:bg-orange-200 flex items-center justify-center transition-colors" 
+                                title="Ajouter aux Intolérances" onclick="addAllergy('${safeName}', 'intolerance')">
+                            <i class="fas fa-file-medical-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+
+            suggestionsBox.innerHTML = html;
+            suggestionsBox.classList.remove('hidden');
+        });
+
+        // Hide on click outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.classList.add('hidden');
+            }
+        });
+    }
+}
+
+// Add Item
+window.addAllergy = async (name, type) => {
+    if (!currentPatient) return;
+
+    // init arrays if missing
+    if (!currentPatient.allergies) currentPatient.allergies = [];
+    if (!currentPatient.intolerances) currentPatient.intolerances = [];
+
+    const targetArray = type === 'allergy' ? currentPatient.allergies : currentPatient.intolerances;
+
+    // Prevent duplicates
+    if (targetArray.includes(name)) {
+        showNotification('Déjà présent dans la liste.', 'warning');
+        return;
+    }
+
+    targetArray.push(name);
+
+    // Close search
+    const searchInput = document.getElementById('allergy-search');
+    const suggestionsBox = document.getElementById('allergy-suggestions');
+    if (searchInput) searchInput.value = '';
+    if (suggestionsBox) suggestionsBox.classList.add('hidden');
+
+    await saveTreatmentsData(false); // Reuse existing save mechanism
+    renderAllergiesAndIntolerances();
+    showNotification(type === 'allergy' ? 'Allergie ajoutée' : 'Intolérance ajoutée', 'success');
+};
+
+// Remove Item
+window.removeAllergy = async (index, type) => {
+    if (!currentPatient) return;
+
+    if (type === 'allergy') {
+        currentPatient.allergies.splice(index, 1);
+    } else {
+        currentPatient.intolerances.splice(index, 1);
+    }
+
+    await saveTreatmentsData(false);
+    renderAllergiesAndIntolerances();
+};
+
+function renderAllergiesAndIntolerances() {
+    const listAllergies = document.getElementById('list-allergies');
+    const listIntolerances = document.getElementById('list-intolerances');
+    const countAllergies = document.getElementById('count-allergies');
+    const countIntolerances = document.getElementById('count-intolerances');
+
+    if (!listAllergies || !listIntolerances) return;
+
+    const allergies = currentPatient?.allergies || [];
+    const intolerances = currentPatient?.intolerances || [];
+
+    // Update Counts
+    if (countAllergies) countAllergies.textContent = allergies.length;
+    if (countIntolerances) countIntolerances.textContent = intolerances.length;
+
+    // Render Allergies
+    if (allergies.length === 0) {
+        listAllergies.innerHTML = `<div class="text-xs text-red-400 italic text-center py-4">Aucune allergie signalée</div>`;
+    } else {
+        listAllergies.innerHTML = allergies.map((item, i) => `
+            <div class="flex justify-between items-center bg-white border border-red-100 rounded px-3 py-2 shadow-sm text-sm">
+                <span class="text-gray-700 font-medium truncate pr-2" title="${item}">${item}</span>
+                <button class="text-red-400 hover:text-red-600 transition-colors" onclick="removeAllergy(${i}, 'allergy')" title="Retirer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // Render Intolerances
+    if (intolerances.length === 0) {
+        listIntolerances.innerHTML = `<div class="text-xs text-orange-400 italic text-center py-4">Aucune intolérance signalée</div>`;
+    } else {
+        listIntolerances.innerHTML = intolerances.map((item, i) => `
+            <div class="flex justify-between items-center bg-white border border-orange-100 rounded px-3 py-2 shadow-sm text-sm">
+                <span class="text-gray-700 font-medium truncate pr-2" title="${item}">${item}</span>
+                <button class="text-orange-400 hover:text-orange-600 transition-colors" onclick="removeAllergy(${i}, 'intolerance')" title="Retirer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+}

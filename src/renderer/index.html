@@ -1339,6 +1339,64 @@
                     </div>
                 </div>
 
+                <!-- NEW: Intolérance et Allergies -->
+                <div class="mt-8 pt-6 border-t border-gray-100">
+                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-blue-500"></i> Intolérances et Allergies
+                    </h4>
+
+                    <!-- Discreet Search -->
+                    <div class="relative w-full max-w-md mb-6">
+                        <div class="relative">
+                            <i
+                                class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                            <input type="text" id="allergy-search"
+                                class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-9 pr-4 text-sm focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder-gray-400"
+                                placeholder="Rechercher une molécule..." autocomplete="off">
+                        </div>
+
+                        <!-- Suggestions Dropdown -->
+                        <div id="allergy-suggestions"
+                            class="hidden absolute top-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto divide-y divide-gray-50 z-20">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Lists Container -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        <!-- Allergies Column -->
+                        <div class="bg-red-50 rounded-lg p-4 border border-red-100">
+                            <h5 class="font-bold text-red-800 text-sm mb-3 flex items-center justify-between">
+                                <span><i class="fas fa-exclamation-circle mr-2"></i> Allergies</span>
+                                <span
+                                    class="bg-white px-2 py-0.5 rounded text-xs text-red-600 border border-red-200 shadow-sm"
+                                    id="count-allergies">0</span>
+                            </h5>
+                            <div id="list-allergies" class="space-y-2 min-h-[100px]">
+                                <!-- Validated Allergies List -->
+                                <div class="text-xs text-red-400 italic text-center py-4">Aucune allergie signalée</div>
+                            </div>
+                        </div>
+
+                        <!-- Intolerances Column -->
+                        <div class="bg-orange-50 rounded-lg p-4 border border-orange-100">
+                            <h5 class="font-bold text-orange-800 text-sm mb-3 flex items-center justify-between">
+                                <span><i class="fas fa-file-medical-alt mr-2"></i> Intolérances</span>
+                                <span
+                                    class="bg-white px-2 py-0.5 rounded text-xs text-orange-600 border border-orange-200 shadow-sm"
+                                    id="count-intolerances">0</span>
+                            </h5>
+                            <div id="list-intolerances" class="space-y-2 min-h-[100px]">
+                                <!-- Validated Intolerances List -->
+                                <div class="text-xs text-orange-400 italic text-center py-4">Aucune intolérance signalée
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -1525,7 +1583,7 @@
                                 </th>
                             </tr>
                         </thead>
-                        <tbody id="table-etp-sessions" class="divide-y divide-gray-100">
+                        <tbody id="table-etp-library" class="divide-y divide-gray-100">
                             <!-- Populated by JS -->
                         </tbody>
                     </table>
