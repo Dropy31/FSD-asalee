@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid');
 const Database = require('better-sqlite3');
 const path = require('path');
 const cryptoHelper = require('../main/crypto');
@@ -123,12 +124,12 @@ function initDatabase(customPath) {
 function createPatient(patientData) {
     if (!db) throw new Error('Database not initialized');
 
-    const uuid = cryptoHelper.encrypt(Date.now().toString()).iv; // Simple unique ID for now, better to use UUID lib
+    const uuid = uuidv4(); // Use standard UUID v4
     const now = new Date().toISOString();
 
     // Encrypt the entire patient object
-    // We add the ID to the object before encrypting so it's part of the record
-    const patientWithMeta = { ...patientData, created_at: now, updated_at: now };
+    // We add the ID to the object for reference, but the primary key is the UUID column + internal ID
+    const patientWithMeta = { ...patientData, uuid, created_at: now, updated_at: now };
     const encrypted = cryptoHelper.encrypt(JSON.stringify(patientWithMeta));
 
     // Store as JSON string of the encrypted object { iv, encryptedData }
