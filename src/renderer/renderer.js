@@ -1,5 +1,5 @@
 // import { calculateScore2Diabetes } from './utils/calculations.js'; // Loaded via script tag
-
+// const { generateSummary } = require('./summary_engine.js'); // FIXED: Loaded via script tag
 
 let currentPatient = null; // Store full patient object (Global)
 
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDelete.innerHTML = '<i class="fas fa-trash-alt fa-lg"></i>';
             btnDelete.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm(`Êtes-vous sûr de vouloir supprimer le dossier de ${patient.lastName} ${patient.firstName} ?`)) {
+                if (confirm(`àtes-vous sûr de vouloir supprimer le dossier de ${patient.lastName} ${patient.firstName} ?`)) {
                     try {
                         await window.electronAPI.deletePatient(patient.db_id);
                         loadDashboardData(); // Refresh list
@@ -1414,6 +1414,7 @@ function formatValueForDisplay(value, type, targetUnit) {
     if (targetUnit === rules.base) {
         // Even for base, round nicely to avoid Float errors (e.g. 1.1 + 0.2 = 1.300000001)
         if (type === 'rac') return Math.round(value).toFixed(0);
+        if (type === 'creat') return parseFloat(value.toFixed(2));
         return parseFloat(value.toFixed(2));
     }
 
@@ -1673,6 +1674,7 @@ function setupUnitToggles() {
                 }
             }
 
+            // Recalculate Derived stats (Score2, DFG)
             // Recalculate Derived stats (Score2, DFG)
             updateBiologicalCalculations();
         });
@@ -2133,9 +2135,9 @@ function showScore2DModal() {
     } else if (isNaN(age) || age < 40 || age >= 70) { // Note: calculations.js says >=70 excludes.
         content = `
             <div class="p-3 bg-blue-50 border border-blue-200 rounded text-blue-700">
-                <h4 class="font-bold mb-1"><i class="fas fa-info-circle"></i> Non Éligible au Calcul</h4>
-                <p>Le modèle SCORE2-Diabetes n'est validé que pour les patients âgés de <strong>40 à 69 ans</strong>.</p>
-                <p class="mt-2 text-xs text-gray-500">Âge actuel : ${isNaN(age) ? '--' : age} ans.</p>
+                <h4 class="font-bold mb-1"><i class="fas fa-info-circle"></i> Non àligible au Calcul</h4>
+                <p>Le modèle SCORE2-Diabetes n'est validé que pour les patients à¢gés de <strong>40 à 69 ans</strong>.</p>
+                <p class="mt-2 text-xs text-gray-500">àge actuel : ${isNaN(age) ? '--' : age} ans.</p>
             </div>
         `;
     } else {
@@ -2182,23 +2184,25 @@ function renderHistoryTable(history) {
     const thead = document.querySelector('#bio-history-table thead');
     if (!tbody || !thead) return;
 
-    // Update Header to include units (Fixed Standard)
+    // Fixed Headers (Requested: Bold Label, lowercase unit, fixed units)
+    const thClass = "px-3 py-2 bg-gray-50 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200";
+
     thead.innerHTML = `
         <tr>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids<br><span class="text-xs normal-case">(kg)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IMC<br><span class="text-xs normal-case">(kg/m²)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PAS<br><span class="text-xs normal-case">(mmHg)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PAD<br><span class="text-xs normal-case">(mmHg)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créat<br><span class="text-xs normal-case">(µmol/L)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DFG<br><span class="text-xs normal-case">(ml/min)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RAC<br><span class="text-xs normal-case">(mg/mmol)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CT<br><span class="text-xs normal-case">(g/L)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TG<br><span class="text-xs normal-case">(g/L)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LDLc<br><span class="text-xs normal-case">(g/L)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HbA1c<br><span class="text-xs normal-case">(%)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SCORE2<br><span class="text-xs normal-case">(%)</span></th>
-            <th class="px-4 py-2 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th class="${thClass}">Date</th>
+            <th class="${thClass}">Poids<br><span class="text-[10px] font-normal text-gray-500 lowercase">(kg)</span></th>
+            <th class="${thClass}">IMC<br><span class="text-[10px] font-normal text-gray-500 lowercase">(kg/m²)</span></th>
+            <th class="${thClass}">PAS<br><span class="text-[10px] font-normal text-gray-500 lowercase">(mmhg)</span></th>
+            <th class="${thClass}">PAD<br><span class="text-[10px] font-normal text-gray-500 lowercase">(mmhg)</span></th>
+            <th class="${thClass}">Créat<br><span class="text-[10px] font-normal text-gray-500 lowercase">(µmol/l)</span></th>
+            <th class="${thClass}">DFG<br><span class="text-[10px] font-normal text-gray-500 lowercase">(ml/min)</span></th>
+            <th class="${thClass}">RAC<br><span class="text-[10px] font-normal text-gray-500 lowercase">(mg/mmol)</span></th>
+            <th class="${thClass}">CT<br><span class="text-[10px] font-normal text-gray-500 lowercase">(g/l)</span></th>
+            <th class="${thClass}">TG<br><span class="text-[10px] font-normal text-gray-500 lowercase">(g/l)</span></th>
+            <th class="${thClass}">LDLc<br><span class="text-[10px] font-normal text-gray-500 lowercase">(g/l)</span></th>
+            <th class="${thClass}">HbA1c<br><span class="text-[10px] font-normal text-gray-500 lowercase">(%)</span></th>
+            <th class="${thClass}">SCORE2<br><span class="text-[10px] font-normal text-gray-500 lowercase">(%)</span></th>
+            <th class="${thClass}">Actions</th>
         </tr>
     `;
 
@@ -2212,105 +2216,39 @@ function renderHistoryTable(history) {
     history.forEach((entry, index) => {
         const row = document.createElement('tr');
 
-        // --- DATA PREPARATION (Fixed Units) ---
+        // FORCE FIXED CONVERSIONS for Table Display
+        // Creat: Base(mg/L) -> µmol/L (Factor 8.84)
+        // RAC: Base(mg/g) -> mg/mmol (Factor 0.113)
+        // Lipids: Base(g/L) -> g/L (No conversion)
 
-        // Creatinine: Stored in Base (µmol/L or mg/L? logic says base is mg/L from conversions?) 
-        // Let's re-verify normalizeValue logic in code.
-        // creat.toUmol = val * 8.84. implies Base was mg/L?
-        // Wait, normalizeValue: 
-        // if unit == 'mg/dL' (incorrect unit string in earlier code?) -> convert to base.
-        // Let's assume standard behavior:
-        // By default, if we store µmol/L as base?
-        // Actually, looking at `toUmol: (val) => val * 8.84`, this implies input was mg/L.
-        // So BASE IS mg/L.
-        // We want Table in µmol/L. So we MUST convert Base(mg/L) * 8.84.
+        const dispCreat = formatValueForDisplay(entry.creat, 'creat', 'µmol/L'); // Base -> Derived
+        const dispRac = formatValueForDisplay(entry.rac, 'rac', 'mg/mmol'); // Base -> Derived
 
-        // RAC:
-        // toMgMmol: val / 8.84. Implies Base is mg/g.
-        // Table wants mg/mmol. So Base(mg/g) / 8.84.
-        // And Round to integer.
+        // Lipids (Base is g/L, Target is g/L)
+        const dispLipids = (val) => formatValueForDisplay(val, 'lipid', 'g/L');
 
-        // Lipids:
-        // toMmol: val * 2.586. Implies Base is g/L.
-        // Table wants g/L. So Display Base directly.
-
-        // NOTE: If my assumption about "Base Unit" is wrong, I might invert conversions.
-        // Checking `CONVERSION_FACTORS`:
-        // lipid.toMmol = val * 2.586. This converts g/L -> mmol/L. So Base is g/L. Correct.
-        // creat.toUmol = val * 8.84. This converts mg/L -> µmol/L. So Base is mg/L. Correct.
-        // rac.toMgMmol = val / 8.84. This converts mg/g -> mg/mmol. So Base is mg/g. Correct.
-
-        const dispCreat = entry.creat ? (entry.creat * 8.84).toFixed(0) : '-'; // Base(mg/L) -> µmol/L
-
-        let dispRac = '-';
-        if (entry.rac) {
-            const racVal = entry.rac / 8.84; // Base(mg/g) -> mg/mmol
-            dispRac = Math.round(racVal).toFixed(0); // Round to integer as requested
-        }
-
-        const dispLipids = (val) => val ? parseFloat(val).toFixed(2) : '-'; // Base is g/L, matches Table Req.
-
-        // Determine Risk Icon State for this Entry
-        // Re-evaluate risk state based on entry data + current persistent risk factors
-        const entryDate = new Date(entry.date);
-        const birthDate = new Date(currentPatient.birthDate);
-        let ageAtEntry = entryDate.getFullYear() - birthDate.getFullYear();
-        // Adjust if birth month/day hasn't occurred yet in that year (simple approx ok for now, or precise)
-        const m = entryDate.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && entryDate.getDate() < birthDate.getDate())) {
-            ageAtEntry--;
-        }
-
-        // 1. Check Exclusion (Red !) - ASCVD (Global) or TOD (Entry specific)
-        // Check Global ASCVD
-        const macroIds = ['macro-coronary', 'macro-aomi', 'macro-stenosis', 'macro-avc'];
-        const hasASCVD = macroIds.some(id => document.getElementById(id) && document.getElementById(id).value === 'OUI');
-
-        // Check Entry TOD
-        const entryDFG = parseFloat(entry.dfg);
-        let isSevereTOD = false;
-        if (!isNaN(entryDFG)) {
-            if (entryDFG < 45) isSevereTOD = true;
-            // We could check RAC/Micro here too if we assume current Micro applies or if we store it.
-            // For now, let's use the helper logic if we can, but assessVeryHighRisk reads DOM.
-            // Let's replicate inline for entry-specifics + global micro.
-            const microIds = ['micro-retino', 'micro-nephro', 'micro-neuro-sens', 'micro-neuro-auto'];
-            const microCount = microIds.filter(id => document.getElementById(id) && document.getElementById(id).value === 'OUI').length;
-
-            // Normalize RAC from entry (Base mg/g?)
-            let entryRac = 0;
-            if (entry.rac) entryRac = entry.rac; // Stored as mg/g base
-
-            if (entryDFG >= 45 && entryDFG <= 59 && entryRac >= 30) isSevereTOD = true; // A2
-            if (entryRac > 300) isSevereTOD = true; // A3
-            if (microCount >= 3) isSevereTOD = true;
-        }
-
-        let iconHtml = '';
-
-        // PRIORITY 1: RED ! (Exclusion / Very High Risk)
-        if (hasASCVD || isSevereTOD) {
-            iconHtml = `<i class="fas fa-exclamation text-red-600 text-lg" title="Risque Très Élevé (Override)"></i>`;
-        }
-        // PRIORITY 2: ORANGE ! (Age Inappropriate)
-        else if (ageAtEntry < 40 || ageAtEntry >= 70) {
-            iconHtml = `<i class="fas fa-exclamation text-orange-500 text-lg" title="Non éligible (Age: ${ageAtEntry} ans)"></i>`;
-        }
-        // PRIORITY 3: GREY ? (Missing Data)
-        // Check entry fields
-        else {
-            // We need to check if SCORE is calculated. 
-            // If calculateScore returns null/empty but no override and age is ok, it's missing data.
-            // OR check columns directly.
-            const hasMissing = !entry.sys || !entry.ct || !entry.hdl || !entry.dfg || !entry.hba1c; // Basic check
+        // Score Icon Logic
+        let iconHtml = '<span class="text-gray-400">-</span>';
+        if (entry.score2d === 'N/A' || entry.score2d === 'T. Élevé' || entry.score2d === 'T. à‰levé') { // Handle legacy corrupt too if present
+            // Override or Ineligible
+            const isOverride = (entry.score2d === 'T. Élevé' || entry.score2d === 'T. à‰levé');
+            // For table we just want the text or icon?
+            // User just mentioned "T. Élevé" display.
+            // If stored as text "T. Élevé", display it.
+            const val = (entry.score2d === 'T. à‰levé') ? 'T. Élevé' : entry.score2d;
+            const colorClass = (val === 'T. Élevé') ? 'text-red-600 font-bold' : 'text-orange-500 font-bold';
+            iconHtml = `<span class="${colorClass} text-xs">${val}</span>`;
+        } else if (entry.score2d) {
+            // Calculated
+            const val = entry.score2d;
+            const colorClass = getScoreColorClass(val);
+            iconHtml = `<span class="font-bold ${colorClass}">${val}</span>`;
+        } else {
+            // Check if it should have been calculated?
+            // Just show ? if missing
+            const hasMissing = !entry.sys || !entry.ct || !entry.hdl || !entry.dfg || !entry.hba1c;
             if (hasMissing) {
                 iconHtml = `<i class="fas fa-question text-gray-400 text-lg" title="Données manquantes"></i>`;
-            } else {
-                // PRIORITY 4: VALID SCORE (Display Value in %)
-                // User request: "display the value in %"
-                const val = entry.score2d || '-';
-                const colorClass = getScoreColorClass(val);
-                iconHtml = `<span class="font-bold ${colorClass}">${val}</span>`;
             }
         }
 
@@ -2666,7 +2604,7 @@ function initTreatmentsModule() {
     if (copyBtn) {
         copyBtn.addEventListener('click', () => {
             if (!currentPatient || !currentPatient.treatments || currentPatient.treatments.length === 0) {
-                showNotification('Aucune prescription �� copier.', 'warning');
+                showNotification('Aucune prescription ï¿½ï¿½ copier.', 'warning');
                 return;
             }
 
@@ -2742,7 +2680,7 @@ function initTreatmentsModule() {
 // Add Treatment
 async function addTreatment(med) {
     if (!currentPatient) {
-        showNotification('Veuillez d\'abord cr��er ou ouvrir un patient.', 'error');
+        showNotification('Veuillez d\'abord crï¿½ï¿½er ou ouvrir un patient.', 'error');
         return;
     }
 
@@ -3240,7 +3178,7 @@ function renderSynthesisChart() {
         pas: { val: null, date: null, min: 90, max: 180, step: 10, decimals: 0, label: 'PAS (mmHg)' },
         ldl: { val: null, date: null, min: 0.4, max: 2.2, step: 0.2, decimals: 2, label: 'LDLc (g/L)' }, // Decimals 2
         tg: { val: null, date: null, min: 0.4, max: 4.0, step: 0.4, decimals: 2, label: 'TG (g/L)' }, // Decimals 2
-        imc: { val: null, date: null, min: 18, max: 45, step: 3, decimals: 1, label: 'IMC (kg/m²)' },
+        imc: { val: null, date: null, min: 18, max: 45, step: 3, decimals: 1, label: 'IMC (kg/mÂ²)' },
         score: { val: null, date: null, min: 2, max: 20, step: 2, decimals: 0, label: 'SCORE2 (%)' }
     };
 
@@ -3714,7 +3652,7 @@ function renderObjectivesModule() {
 
     // Helper: Determine Trend Icon
     const getTrendIcon = (curr, prev) => {
-        if (curr === null || prev === null) return '<div class="w-6 h-6 rounded bg-gray-200 flex items-center justify-center mx-auto"><span class="text-gray-500 font-bold text-xs">•</span></div>';
+        if (curr === null || prev === null) return '<div class="w-6 h-6 rounded bg-gray-200 flex items-center justify-center mx-auto"><span class="text-gray-500 font-bold text-xs">â¢</span></div>';
         const diff = curr - prev;
         const threshold = 0.01;
 
@@ -4122,7 +4060,7 @@ window.editEtpSession = (id) => {
 };
 
 window.deleteEtpSessionRef = async (id) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette séance du référentiel ?")) {
+    if (confirm("àtes-vous sûr de vouloir supprimer cette séance du référentiel ?")) {
         try {
             await window.electronAPI.deleteEtpSession(id);
             showNotification("Séance supprimée", "success");
@@ -4176,6 +4114,7 @@ async function saveEtpSession() {
 document.addEventListener('DOMContentLoaded', () => {
     initEtpLibrary();
     initEducationModule(); // Ensure Education Dashboard renders empty/placeholder if no patient open, or sets up listeners
+    initSummaryModule();
 });
 
 // --- ALLERGIES & INTOLERANCES MODULE ---
@@ -4325,4 +4264,91 @@ function renderAllergiesAndIntolerances() {
             </div>
         `).join('');
     }
+}
+
+// --- SUMMARY & EXPORT MODULE ---
+
+function initSummaryModule() {
+    const btnGenerate = document.getElementById('btn-generate-summary');
+    const btnCopy = document.getElementById('btn-copy-summary');
+    const btnPdf = document.getElementById('btn-export-pdf');
+    const selectTemplate = document.getElementById('summary-template-select');
+    const editor = document.getElementById('summary-editor');
+
+    if (btnGenerate && editor && selectTemplate) {
+        btnGenerate.addEventListener('click', () => {
+            if (!currentPatient) {
+                showNotification("Veuillez d'abord ouvrir un dossier patient.", "warning");
+                return;
+            }
+            try {
+                const text = generateSummary(currentPatient, selectTemplate.value);
+                editor.value = text;
+                showNotification("Résumé généré avec succès", "success");
+            } catch (err) {
+                console.error("Summary Generation Error:", err);
+                showNotification("Erreur lors de la génération", "error");
+            }
+        });
+    }
+
+    if (btnCopy && editor) {
+        btnCopy.addEventListener('click', () => {
+            if (!editor.value) return;
+            navigator.clipboard.writeText(editor.value)
+                .then(() => showNotification("Copié dans le presse-papiers", "success"))
+                .catch(err => showNotification("à0 chec de la copie", "error"));
+        });
+    }
+
+    if (btnPdf && editor) {
+        btnPdf.addEventListener('click', () => {
+            if (!editor.value) {
+                showNotification("Rien à exporter. Générez d'abord un résumé.", "warning");
+                return;
+            }
+            printSummaryToPdf(editor.value);
+        });
+    }
+}
+
+function printSummaryToPdf(text) {
+    // 1. Create a hidden iframe or print window logic
+    // We'll use a hidden div + @media print styles for simplicity and better control in Electron
+
+    // Create print container if not exists
+    let printContainer = document.getElementById('print-container');
+    if (!printContainer) {
+        printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
+        document.body.appendChild(printContainer);
+    }
+
+    // Format text (convert newlines to <br>)
+    const formattedText = text.replace(/\n/g, '<br>');
+
+    // Header Info
+    const today = new Date().toLocaleDateString('fr-FR');
+
+    // Structure
+    printContainer.innerHTML = `
+        <div class="print-content">
+            <div class="header">
+                <h1>Dossier Patient - ASALEE</h1>
+                <p>Date : ${today}</p>
+            </div>
+            <div class="body">
+                ${formattedText}
+            </div>
+            <div class="footer">
+                <p>Généré par Diabetes Desktop Secure â¬ ¢ Données confidentielles</p>
+            </div>
+        </div>
+    `;
+
+    // Trigger Print
+    window.print();
+
+    // Cleanup (Optional, or leave for next time)
+    // printContainer.innerHTML = '';
 }
