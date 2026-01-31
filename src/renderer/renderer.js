@@ -1,18 +1,78 @@
+console.log('--- RENDERER.JS LOADED ---');
 // import { calculateScore2Diabetes } from './utils/calculations.js'; // Loaded via script tag
 // const { generateSummary } = require('./summary_engine.js'); // FIXED: Loaded via script tag
+import { debounce } from './modules/utils.js';
+import { initNavigation, updateNavigationState, viewTitles } from './modules/navigation.js';
+import { patientManager } from './modules/patient-manager.js';
 
-let currentPatient = null; // Store full patient object (Global)
+// --- UI HELPER FUNCTIONS (GLOBAL) ---
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notification-container');
+    if (!container) {
+        console.warn('Toast: ' + message);
+        return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `px-6 py-3 rounded-lg shadow-lg text-white font-medium transform transition-all duration-300 translate-y-4 opacity-0 border border-white/10 flex items-center gap-3 z-50`;
 
-// Global Save Helper
+    if (type === 'success') toast.classList.add('bg-gray-800');
+    if (type === 'error') toast.classList.add('bg-red-600');
+    if (type === 'info') toast.classList.add('bg-blue-600');
+    if (type === 'warning') toast.classList.add('bg-orange-500');
+
+    let icon = 'check-circle';
+    if (type === 'error') icon = 'exclamation-circle';
+    if (type === 'info') icon = 'info-circle';
+    if (type === 'warning') icon = 'exclamation-triangle';
+
+    toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
+    setTimeout(() => {
+        toast.classList.add('translate-y-4', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+window.showNotification = showNotification;
+
+function highlightError(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
+    setTimeout(() => el.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 3000);
+}
+window.highlightError = highlightError;
+
+function shakeElement(selector) {
+    const el = document.querySelector(selector);
+    if (el) {
+        el.classList.add('animate-shake');
+        setTimeout(() => el.classList.remove('animate-shake'), 500);
+    }
+}
+window.shakeElement = shakeElement;
+// --- END UI HELPER FUNCTIONS ---
+
+// Legacy Bridge: Expose patientManager's currentPatient to window.currentPatient
+Object.defineProperty(window, 'currentPatient', {
+    get: () => patientManager.currentPatient,
+    set: (val) => { patientManager.currentPatient = val; },
+    configurable: true
+});
+
+// Global Save Helper (Refactored to use Manager)
 async function savePatients() {
-    if (!currentPatient || !currentPatient.db_id) return;
+    const p = patientManager.currentPatient;
+    if (!p || !p.db_id) return;
     try {
-        await window.electronAPI.updatePatient(currentPatient.db_id, currentPatient);
+        await patientManager.update(p.db_id, p);
         console.log("Global Save: Success");
     } catch (e) {
         console.error("Global Save: Failed", e);
     }
 }
+window.savePatients = savePatients;
 
 document.addEventListener('DOMContentLoaded', () => {
     const navButtons = document.querySelectorAll('.nav-btn');
@@ -39,17 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let saveTimeout = null; // For debounce
 
     // Helper: Debounce
-    const debounce = (func, wait) => {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    };
+    // Imported from modules/utils.js
+    // const debounce = ... (removed)
 
     // Helper: Update "Nouveau Patient" visibility
     const updateNewPatientButtonVisibility = (targetId) => {
@@ -66,21 +117,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const openPatientHandler = async (id, switchView = true) => {
         console.log('Opening patient:', id, 'switchView:', switchView);
         try {
-            const patient = await window.electronAPI.getPatient(id);
+            // Use Manager to fetch
+            const patient = await patientManager.getById(id);
             if (!patient) {
                 console.error('Patient not found');
                 showNotification('Patient non trouvé dans la base de données.', 'error');
                 return;
             }
 
-            currentPatient = patient;
+            // Update Manager State (triggers listeners if any)
+            patientManager.currentPatient = patient;
 
             // Populate Identity Form
             // Only populate if we are switching view OR if the ID changed (to avoid overwriting user input in progress)
-            // But wait, if we just saved "Dupont", the DB has "Dupont". Overwriting "Dupont" with "Dupont" is safe-ish,
-            // but if the user typed "Dupontt" in the interim millisecond?
-            // Actually, for auto-save, we mainly want to set the CONTEXT (currentPatient, Banner, Nav).
-            // We might trust the form values are current since we just saved them.
+            // But wait, if we just saved "Dupont", the DB has "Dupont". Overwriting "Dupont" is safe.
 
             if (switchView) {
                 // Safe Setters Helpers
@@ -202,19 +252,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Close Patient Handler
     const closePatientHandler = () => {
-        currentPatient = null;
+        patientManager.currentPatient = null;
         updateNavigationState(false);
+        updateSidebarVisibility({}); // Hide all protocol tabs including non-diabetes medical tabs
 
         // Hide Banner
         const banner = document.getElementById('active-patient-banner');
         if (banner) banner.classList.add('hidden');
 
-        // Go to Dashboard (Patients List)
+        // Go to Dashboard
         document.querySelector('[data-target="dashboard"]').click();
 
         // Clear Protocol Badges
         const badgeContainer = document.getElementById('protocol-badges');
         if (badgeContainer) badgeContainer.innerHTML = '';
+
+        // EXPLICITLY UNCHECK PROTOCOLS to prevent ghost state
+        ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
+            const cb = document.getElementById(`proto-${p}`);
+            const dateInp = document.getElementById(`date-${p}`);
+            if (cb) cb.checked = false;
+            if (dateInp) dateInp.value = '';
+        });
+
+        showNotification('Dossier fermé', 'info');
     };
 
     const btnClosePatient = document.getElementById('btn-close-patient');
@@ -223,118 +284,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Navigation Logic ---
-    const updateNavigationState = (hasPatient) => {
-        const patientBtns = document.querySelectorAll('.patient-nav-btn');
-        patientBtns.forEach(btn => {
-            if (hasPatient) {
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                btn.disabled = false;
-            } else {
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-                btn.disabled = true;
-            }
-        });
-    };
-
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            if (btn.disabled) {
-                e.preventDefault();
-                return;
-            }
-
-            // Guard: Mandatory Fields (Sex/DOB) for Patient Tabs
-            const targetId = btn.getAttribute('data-target');
-            const patientTabs = ['patient-profile', 'respiratory', 'prevention', 'cognitive', 'followup', 'exams', 'treatments', 'education', 'letters', 'synthesis']; // Tabs requiring DFG/Age context
-
+    // Wired to modules/navigation.js
+    initNavigation({
+        guardCheck: (targetId) => {
+            const patientTabs = ['patient-profile', 'respiratory', 'prevention', 'cognitive', 'followup', 'exams', 'treatments', 'education', 'letters', 'synthesis'];
             if (patientTabs.includes(targetId)) {
                 const birthDate = document.getElementById('inp-birthdate').value;
                 const gender = document.getElementById('inp-gender').value;
-                console.log(`Nav Guard: Target=${targetId}, DOB='${birthDate}', Gender='${gender}'`);
 
                 if (!birthDate || !gender) {
-                    // alert('Le Sexe et la Date de Naissance sont obligatoires pour accéder à ces onglets.');
-
-                    // Visual Feedback instead of Alert
-                    shakeElement('#form-identity'); // Shake the form
-                    showNotification('Le Sexe et la Date de Naissance sont obligatoires.', 'error');
+                    shakeElement('#form-identity');
+                    // showNotification is likely global or we need to find it ?? 
+                    // Assuming showNotification is available or we use alert fallback if fails?
+                    // actually showNotification appears used in line 189 so it must exist.
+                    if (window.showNotification) window.showNotification('Le Sexe et la Date de Naissance sont obligatoires.', 'error');
+                    else console.warn('showNotification not found');
 
                     if (!birthDate) highlightError('inp-birthdate');
                     if (!gender) highlightError('inp-gender');
 
-                    e.preventDefault();
-                    e.stopPropagation(); // Stop other handlers
-
-                    // Force switch to Identity tab if not already there
+                    // Switch to Identity
                     const identityBtn = document.querySelector('[data-target="identity-protocols"]');
-                    if (identityBtn && !identityBtn.classList.contains('active')) {
-                        // We must call click() but avoid infinite loop if we monitor clicks differently?
-                        // Actually, just letting the logic fall through or manually handling class switch might be safer.
-                        // But clicking identity button is logically sound as it triggers the view switch.
-                        // However, we are inside a generic click handler.
-                        // Better to just return and perhaps highlight the inputs?
+                    if (identityBtn) identityBtn.click();
 
-                        // Switch view manually to be safe
-                        navButtons.forEach(b => b.classList.remove('active'));
-                        identityBtn.classList.add('active');
-                        views.forEach(v => v.classList.add('hidden'));
-                        document.getElementById('view-identity-protocols').classList.remove('hidden');
-                        document.getElementById('page-title').textContent = viewTitles['identity-protocols'];
-                    }
-                    return;
+                    return false; // Block navigation
                 }
             }
-
-            // Remove active class from all buttons
-            navButtons.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
-            btn.classList.add('active');
-
-            // HIDE ALL VIEWS
-            const allViews = document.querySelectorAll('.view-section');
-            allViews.forEach(v => {
-                v.classList.remove('active-view');
-                v.classList.add('hidden'); // Legacy support
-            });
-
-            // SHOW TARGET VIEW
-            const targetView = document.getElementById(`view-${targetId}`);
-            if (targetView) {
-                targetView.classList.remove('hidden'); // Legacy support
-                targetView.classList.add('active-view');
-                console.log(`Showing view: view-${targetId}`);
-            } else {
-                console.error(`Target view not found: view-${targetId}`);
-            }
-
-            // Update page title
-            if (viewTitles[targetId]) {
-                pageTitle.textContent = viewTitles[targetId];
-            }
-
-            // Update New Patient Button Visibility
-            updateNewPatientButtonVisibility(targetId);
-
-            // Lazy Load Letters Module
-            if (targetId === 'letters') {
-                initLettersModule();
-            }
-        });
+            return true; // Allow navigation
+        }
     });
 
-    // Initialize with Dashboard active
-    // We need to ensure Dashboard is shown on load
-    const initDashboard = () => {
-        const dashboard = document.getElementById('view-dashboard');
-        if (dashboard) {
-            dashboard.classList.add('active-view');
-            dashboard.classList.remove('hidden');
-        }
-    };
-    initDashboard();
 
-    updateNavigationState(false);
-    updateNewPatientButtonVisibility('dashboard');
     document.querySelector('[data-target="dashboard"]').click();
 
     // --- Data Loading Logic ---
@@ -342,15 +322,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadDashboardData = async () => {
         try {
+            console.log('--- loadDashboardData START ---');
             const patients = await window.electronAPI.getPatients();
-            allPatients = patients; // Update local cache
-            // updateDashboardStats(patients); // Removed
-            updateRecentPatientsTable(patients);
-            updateAllPatientsTable(patients); // Initial render of full list
+            console.log('Patients retrieved:', patients ? patients.length : 'null');
+            allPatients = patients || []; // Update local cache
+            updateRecentPatientsTable(allPatients);
+            updateAllPatientsTable(allPatients); // Initial render of full list
+            console.log('--- loadDashboardData END ---');
         } catch (error) {
             console.error('Error loading dashboard data:', error);
         }
     };
+
+    // Restore Data Loading Trigger
+    const dashboardBtn = document.querySelector('[data-target="dashboard"]');
+    if (dashboardBtn) {
+        dashboardBtn.addEventListener('click', loadDashboardData);
+    } else {
+        console.error('CRITICAL: Dashboard button not found!');
+    }
+
+    // Initial Load - Force it
+    console.log('Triggering initial loadDashboardData...');
+    setTimeout(loadDashboardData, 500); // Small delay to ensure DOM is ready? (Logic is inside DOMContentLoaded so unnecessary but safe)
+
+    // Debug View State
+    setTimeout(() => {
+        const dash = document.getElementById('view-dashboard');
+        console.log('Dashboard View State:', dash.className, 'Display:', window.getComputedStyle(dash).display);
+    }, 1000);
+    // The following lines were likely misplaced and are now commented out or removed as they were causing syntax errors.
+    // updateAllPatientsTable(patients); // Initial render of full list
+    // } catch (error) {
+    //     console.error('Error loading dashboard data:', error);
+    // }
+    // };
 
     // Stats update removed
     /*
@@ -456,10 +462,19 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDelete.innerHTML = '<i class="fas fa-trash-alt fa-lg"></i>';
             btnDelete.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm(`àtes-vous sûr de vouloir supprimer le dossier de ${patient.lastName} ${patient.firstName} ?`)) {
+                // Use robust confirmation with normalized text or exact match
+                if (confirm(`Êtes-vous sûr de vouloir supprimer le dossier de ${patient.lastName} ${patient.firstName} ?`)) {
                     try {
+                        // Check if deleting active patient (loose equality)
+                        if (currentPatient && (currentPatient.db_id == patient.db_id)) {
+                            if (typeof closePatientHandler === 'function') {
+                                closePatientHandler();
+                            }
+                        }
+
                         await window.electronAPI.deletePatient(patient.db_id);
                         loadDashboardData(); // Refresh list
+                        if (window.showNotification) showNotification('Dossier supprimé', 'success');
                     } catch (err) {
                         console.error('Error deleting patient:', err);
                         alert('Erreur lors de la suppression');
@@ -511,46 +526,95 @@ document.addEventListener('DOMContentLoaded', () => {
     // Refresh data when switching to dashboard
     document.querySelector('[data-target="dashboard"]').addEventListener('click', loadDashboardData);
 
-    // New Patient Button
-    const btnNewPatient = document.getElementById('btn-new-patient');
-    console.log('New Patient Button found:', !!btnNewPatient);
-    if (btnNewPatient) {
-        btnNewPatient.addEventListener('click', () => {
-            console.log('New Patient button clicked');
-            currentPatient = null; // Reset current patient context
+    // New Patient Button (Delegated Event for Stability)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#btn-new-patient');
+        if (!btn) return;
+
+        console.log('New Patient button clicked (delegated)');
+
+        try {
+            patientManager.currentPatient = null; // Reset current patient context
 
             // 1. Clear Form (Identity & Risks)
             document.getElementById('patient-id').value = '';
             const form = document.getElementById('form-identity');
-            form.reset();
+            if (form) form.reset();
 
             // 2. Clear Bio History & Chart
-            renderHistoryTable([]);
-            renderEvolutionChart([]);
+            // Guard against missing functions
+            if (typeof renderHistoryTable === 'function') renderHistoryTable([]);
+            if (typeof renderEvolutionChart === 'function') renderEvolutionChart([]);
 
             // 3. Clear Exams
-            loadExamsData(null);
+            if (typeof loadExamsData === 'function') loadExamsData(null);
 
-            // Explicitly enable all inputs (just in case)
-            Array.from(form.elements).forEach(el => {
-                el.disabled = false;
-                el.readOnly = false;
+            // 4. Clear Medical Profile (Robust Reset)
+            const profileForm = document.getElementById('form-profile');
+            if (profileForm) {
+                profileForm.reset();
+                console.log("Profile form reset");
+            }
+
+            // EXPLICITLY UNCHECK PROTOCOLS (Safety Net)
+            ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
+                const cb = document.getElementById(`proto-${p}`);
+                const dateInp = document.getElementById(`date-${p}`);
+                if (cb) cb.checked = false;
+                if (dateInp) dateInp.value = '';
             });
-            document.getElementById('inp-age').value = '--';
-            document.getElementById('calc-duration').textContent = '--';
+
+            // Ensure Diagnosis Year is definitively clear
+            const inputYear = document.getElementById('inp-diagnosis-year');
+            if (inputYear) inputYear.value = '';
+
+            // Re-reset duration text explicitly
+            const durEl = document.getElementById('calc-duration');
+            if (durEl) durEl.textContent = '--';
+
+            // Explicitly enable all inputs
+            if (form) {
+                Array.from(form.elements).forEach(el => {
+                    el.disabled = false;
+                    el.readOnly = false;
+                });
+            }
+            if (profileForm) {
+                Array.from(profileForm.elements).forEach(el => {
+                    el.disabled = false;
+                    el.readOnly = false;
+                });
+            }
+
+            const ageEl = document.getElementById('inp-age');
+            if (ageEl) ageEl.value = '--';
 
             // Hide Banner
             const banner = document.getElementById('active-patient-banner');
             if (banner) banner.classList.add('hidden');
 
-            // Enable Navigation (for new patient context)
+            // Reset Sidebar to basics (hide all protocol specific)
+            updateSidebarVisibility({});
+
+            // Enable Navigation (Identity + Courriers)
             updateNavigationState(true);
+
+            // MANUALLY DISABLE COURRIERS for New Patient until saved
+            const mailBtn = document.querySelector('[data-target="letters"]');
+            if (mailBtn) {
+                mailBtn.disabled = true;
+                mailBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
 
             // Switch to Identity View
             const identityBtn = document.querySelector('[data-target="identity-protocols"]');
             if (identityBtn) identityBtn.click();
-        });
-    }
+
+        } catch (err) {
+            console.error("Critical Error in New Patient Flow:", err);
+            if (window.showNotification) window.showNotification("Erreur lors de la création: " + err.message, 'error');
+        }
+    });
 
     // Unified Save Function
     const saveIdentityForm = async (notify = true) => {
@@ -591,12 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     nephro: document.getElementById('micro-nephro').value,
                     neuroSens: document.getElementById('micro-neuro-sens').value,
                     neuroAuto: document.getElementById('micro-neuro-auto').value
-                },
-                others: {
-                    hf: document.getElementById('other-hf').value,
-                    afib: document.getElementById('other-afib').value,
-                    foot: document.getElementById('other-foot').value,
-                    liver: document.getElementById('other-liver').value
                 },
                 others: {
                     hf: document.getElementById('other-hf').value,
@@ -961,72 +1019,9 @@ const updateDuration = (yearStr) => {
 };
 
 
-function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+// debounce imported from modules/utils.js
 
-// --- UI Feedback Helpers ---
-function showNotification(message, type = 'info') {
-    const container = document.getElementById('notification-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-
-    let icon = 'info-circle';
-    if (type === 'success') icon = 'check-circle';
-    if (type === 'error') icon = 'exclamation-circle';
-
-    toast.innerHTML = `
-        <i class="fas fa-${icon} text-lg"></i>
-        <div class="toast-content">
-            <div class="toast-title">${type === 'error' ? 'Erreur' : type === 'success' ? 'Succès' : 'Information'}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-    `;
-
-    container.appendChild(toast);
-
-    // Trigger animation
-    requestAnimationFrame(() => {
-        toast.classList.add('show');
-    });
-
-    // Auto remove
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3500);
-}
-
-function highlightError(elementId) {
-    const el = document.getElementById(elementId);
-    if (el) {
-        el.classList.add('input-error');
-        el.addEventListener('input', () => el.classList.remove('input-error'), { once: true });
-        el.addEventListener('change', () => el.classList.remove('input-error'), { once: true });
-    }
-}
-
-function shakeElement(elementIdOrClass) {
-    let el = document.getElementById(elementIdOrClass);
-    if (!el) el = document.querySelector(elementIdOrClass);
-
-    if (el) {
-        el.classList.remove('shake');
-        void el.offsetWidth; // Trigger reflow
-        el.classList.add('shake');
-        setTimeout(() => el.classList.remove('shake'), 500);
-    }
-}
+// (Removed duplicate UI helpers - see top of file)
 
 
 
@@ -1442,6 +1437,40 @@ function calculateSCORE2Diabetes() {
     }
 }
 
+// --- HISTORY TABLE & CHART ---
+function renderHistoryTable_UNUSED(data) {
+    const tbody = document.getElementById('table-history'); // Verify ID in Step 300?? history-table-body?
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (!data || data.length === 0) {
+        // Optional: show empty row
+        return;
+    }
+
+    // Sort by date desc
+    const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    sorted.forEach(entry => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-4 py-2">${new Date(entry.date).toLocaleDateString()}</td>
+            <td class="px-4 py-2">${entry.hba1c || '-'}</td>
+            <td class="px-4 py-2">${entry.ldl || '-'}</td>
+            <td class="px-4 py-2">${entry.weight || '-'}</td>
+            <td class="px-4 py-2 text-right">
+                <button class="text-red-500 hover:text-red-700" onclick="deleteHistoryEntry('${entry.date}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+// window.renderHistoryTable = renderHistoryTable;
+
+// function renderEvolutionChart(data) removed - duplicate of line 1986
+
 // --- ICON HELPER ---
 function updateRiskStatusIcon(state) {
     const icon = document.getElementById('score2d-status-icon');
@@ -1527,22 +1556,7 @@ function assessVeryHighRisk(eGFR) {
     return false;
 }
 
-// --- AUTO-UPDATE LOGIC ---
-function autoUpdateNephropathy(eGFR) {
-    if (eGFR < 60) {
-        const nephroSelect = document.getElementById('micro-nephro');
-        if (nephroSelect && nephroSelect.value !== 'OUI') {
-            nephroSelect.value = 'OUI';
-            // Trigger visual alert
-            const alertIcon = document.getElementById('identity-alert-icon');
-            if (alertIcon) {
-                alertIcon.classList.remove('hidden');
-            }
-            // Trigger save? Or just wait for user actions?
-            // Usually form requires manual save, but we modified the view.
-        }
-    }
-}
+
 
 // Clear alert on tab visit
 document.addEventListener('DOMContentLoaded', () => {
@@ -4643,7 +4657,10 @@ function printSummaryToPdf(text) {
 // --- Template Manager Module ---
 
 async function initTemplateManager() {
+    console.log("[Templates] initTemplateManager START");
+    // window.initTemplateManager = initTemplateManager; // Removed from here
     const listContainer = document.getElementById('template-list-container');
+    console.log("[Templates] listContainer found:", !!listContainer);
     const macroListContainer = document.getElementById('macro-list-container');
     const editorPanel = document.getElementById('template-editor-panel');
     const emptyState = document.getElementById('template-editor-empty');
@@ -4907,7 +4924,12 @@ async function initTemplateManager() {
 
     // Initialize Synthesis Dropdown Integration
     updateSynthesisDropdown();
+
+    // Initial Load of Lists
+    await loadTemplatesList();
+    renderMacroList();
 }
+window.initTemplateManager = initTemplateManager;
 
 async function updateSynthesisDropdown() {
     const select = document.getElementById('summary-template-select');
@@ -4945,6 +4967,7 @@ async function updateSynthesisDropdown() {
 let lettersModuleInitialized = false;
 
 function initLettersModule() {
+    // window.initLettersModule = initLettersModule; // Removed
     // Prevent double init listeners (though function is safe to call for reload)
     // Actually we want to reload lists every time we enter the tab? Or just once?
     // Let's reload lists on entry to ensure freshness.
@@ -5055,6 +5078,7 @@ function initLettersModule() {
     // Macros
     initLetterMacros(macroSearch, macroFilter);
 }
+window.initLettersModule = initLettersModule;
 
 async function loadLetterTemplates() {
     try {
