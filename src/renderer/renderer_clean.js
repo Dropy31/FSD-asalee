@@ -1,5 +1,5 @@
 // import { calculateScore2Diabetes } from './utils/calculations.js'; // Loaded via script tag
-// const { generateSummary } = require('./summary_engine.js'); // FIXED: Loaded via script tag
+const { generateSummary } = require('./summary_engine.js');
 
 let currentPatient = null; // Store full patient object (Global)
 
@@ -16,23 +16,20 @@ async function savePatients() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const navButtons = document.querySelectorAll('.nav-btn');
+    const views = document.querySelectorAll('.view-section');
     const pageTitle = document.getElementById('page-title');
 
     const viewTitles = {
         'dashboard': 'Patients',
-        'identity-protocols': 'Identité & Protocoles',
-        'patient-profile': 'Profil Médical',
-        'respiratory': 'Suivi Respiratoire',
-        'prevention': 'Prévention',
-        'cognitive': 'Cognitif',
+        'identity': 'Profil',
+        'risks': 'Profil de Risque & Complications',
         'followup': 'Suivi Biologique',
         'exams': 'Examens',
         'treatments': 'Traitements',
         'education': 'ETP',
         'synthesis': 'Synthèse',
         'etp-library': 'Bibliothèque',
-        'pharma-book': 'Livret Pharmaceutique',
-        'letters': 'Courriers'
+        'pharma-book': 'Livret Pharmaceutique'
     };
 
     // let currentPatient = null; // Moved to global scope
@@ -83,31 +80,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // We might trust the form values are current since we just saved them.
 
             if (switchView) {
-                // Safe Setters Helpers
-                const setSafeValue = (id, val) => {
-                    const el = document.getElementById(id);
-                    if (el) el.value = val;
-                    else console.warn(`Element not found: ${id}`);
-                };
-                const setSafeChecked = (id, checked) => {
-                    const el = document.getElementById(id);
-                    if (el) el.checked = checked;
-                    else console.warn(`Checkbox not found: ${id}`);
-                };
-
-                setSafeValue('patient-id', patient.db_id);
-                setSafeValue('inp-lastname', patient.lastName || '');
-                setSafeValue('inp-firstname', patient.firstName || '');
-                setSafeValue('inp-birthdate', patient.birthDate || '');
-                setSafeValue('inp-gender', patient.gender || '');
-                setSafeValue('inp-diagnosis-year', patient.diagnosisYear || '');
-                setSafeValue('inp-gp', patient.gp || '');
+                document.getElementById('patient-id').value = patient.db_id;
+                document.getElementById('inp-lastname').value = patient.lastName || '';
+                document.getElementById('inp-firstname').value = patient.firstName || '';
+                document.getElementById('inp-birthdate').value = patient.birthDate || '';
+                document.getElementById('inp-gender').value = patient.gender || '';
+                document.getElementById('inp-diagnosis-year').value = patient.diagnosisYear || '';
+                document.getElementById('inp-gp').value = patient.gp || '';
 
                 // Trigger Calculations
                 updateAge(patient.birthDate);
-                if (typeof updateDuration === 'function') {
-                    updateDuration(patient.diagnosisYear);
-                }
+                updateDuration(patient.diagnosisYear);
 
                 // Populate Risk Profile
                 const p = patient.riskProfile || {};
@@ -116,44 +99,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const micro = p.micro || {};
                 const others = p.others || {};
 
-                setSafeValue('risk-hta', cv.hta || 'NON');
-                setSafeValue('risk-dyslipidemia', cv.dyslipidemia || 'NON');
-                setSafeValue('risk-tobacco', cv.tobacco || 'NON');
-                setSafeValue('risk-heredity', cv.heredity || 'NON');
+                document.getElementById('risk-hta').value = cv.hta || 'NON';
+                document.getElementById('risk-dyslipidemia').value = cv.dyslipidemia || 'NON';
+                document.getElementById('risk-tobacco').value = cv.tobacco || 'NON';
+                document.getElementById('risk-heredity').value = cv.heredity || 'NON';
 
-                setSafeValue('macro-avc', macro.avc || 'NON');
-                setSafeValue('macro-coronary', macro.coronary || 'NON');
-                setSafeValue('macro-aomi', macro.aomi || 'NON');
-                setSafeValue('macro-stenosis', macro.stenosis || 'NON');
+                document.getElementById('macro-avc').value = macro.avc || 'NON';
+                document.getElementById('macro-coronary').value = macro.coronary || 'NON';
+                document.getElementById('macro-aomi').value = macro.aomi || 'NON';
+                document.getElementById('macro-stenosis').value = macro.stenosis || 'NON';
 
-                setSafeValue('micro-retino', micro.retino || 'NON');
-                setSafeValue('micro-nephro', micro.nephro || 'NON');
-                setSafeValue('micro-neuro-sens', micro.neuroSens || 'NON');
-                setSafeValue('micro-neuro-auto', micro.neuroAuto || 'NON');
+                document.getElementById('micro-retino').value = micro.retino || 'NON';
+                document.getElementById('micro-nephro').value = micro.nephro || 'NON';
+                document.getElementById('micro-neuro-sens').value = micro.neuroSens || 'NON';
+                document.getElementById('micro-neuro-auto').value = micro.neuroAuto || 'NON';
 
-                setSafeValue('other-hf', others.hf || 'NON');
-                setSafeValue('other-afib', others.afib || 'NON');
-                setSafeValue('other-foot', others.foot || 'Grade 0');
-                setSafeValue('other-liver', others.liver || 'NON');
-
-                // Populate Protocols
-                const protocols = patient.protocols || {};
-                ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
-                    setSafeChecked(`proto-${p}`, !!protocols[p]);
-
-                    const dateInp = document.getElementById(`date-${p}`);
-                    if (dateInp) {
-                        dateInp.value = protocols[p] || '';
-                        // We rely on CSS peer-checked for visibility now, 
-                        // but we just set the value.
-                    }
-                    // Trigger Visual Update
-                    if (window.updateProtocolCardVisuals) {
-                        window.updateProtocolCardVisuals(p);
-                    }
-                });
-                updateSidebarVisibility(protocols);
-                updateProtocolBadges(protocols);
+                document.getElementById('other-hf').value = others.hf || 'NON';
+                document.getElementById('other-afib').value = others.afib || 'NON';
+                document.getElementById('other-foot').value = others.foot || 'Grade 0';
+                document.getElementById('other-liver').value = others.liver || 'NON';
             }
 
             // Load Biological Data
@@ -190,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Switch to View
             if (switchView) {
-                const identityBtn = document.querySelector('[data-target="identity-protocols"]');
+                const identityBtn = document.querySelector('[data-target="identity"]'); // Re-added definition
                 if (identityBtn) identityBtn.click();
             }
         } catch (err) {
@@ -211,10 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Go to Dashboard (Patients List)
         document.querySelector('[data-target="dashboard"]').click();
-
-        // Clear Protocol Badges
-        const badgeContainer = document.getElementById('protocol-badges');
-        if (badgeContainer) badgeContainer.innerHTML = '';
     };
 
     const btnClosePatient = document.getElementById('btn-close-patient');
@@ -245,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Guard: Mandatory Fields (Sex/DOB) for Patient Tabs
             const targetId = btn.getAttribute('data-target');
-            const patientTabs = ['patient-profile', 'respiratory', 'prevention', 'cognitive', 'followup', 'exams', 'treatments', 'education', 'letters', 'synthesis']; // Tabs requiring DFG/Age context
+            const patientTabs = ['followup', 'exams', 'treatments', 'education']; // Tabs requiring DFG/Age context
 
             if (patientTabs.includes(targetId)) {
                 const birthDate = document.getElementById('inp-birthdate').value;
@@ -266,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation(); // Stop other handlers
 
                     // Force switch to Identity tab if not already there
-                    const identityBtn = document.querySelector('[data-target="identity-protocols"]');
+                    const identityBtn = document.querySelector('[data-target="identity"]');
                     if (identityBtn && !identityBtn.classList.contains('active')) {
                         // We must call click() but avoid infinite loop if we monitor clicks differently?
                         // Actually, just letting the logic fall through or manually handling class switch might be safer.
@@ -278,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         navButtons.forEach(b => b.classList.remove('active'));
                         identityBtn.classList.add('active');
                         views.forEach(v => v.classList.add('hidden'));
-                        document.getElementById('view-identity-protocols').classList.remove('hidden');
-                        document.getElementById('page-title').textContent = viewTitles['identity-protocols'];
+                        document.getElementById('view-identity').classList.remove('hidden');
+                        document.getElementById('page-title').textContent = viewTitles['identity'];
                     }
                     return;
                 }
@@ -290,21 +250,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add active class to clicked button
             btn.classList.add('active');
 
-            // HIDE ALL VIEWS
-            const allViews = document.querySelectorAll('.view-section');
-            allViews.forEach(v => {
-                v.classList.remove('active-view');
-                v.classList.add('hidden'); // Legacy support
-            });
+            // Hide all views
+            views.forEach(v => v.classList.add('hidden'));
 
-            // SHOW TARGET VIEW
+            // Show target view
             const targetView = document.getElementById(`view-${targetId}`);
             if (targetView) {
-                targetView.classList.remove('hidden'); // Legacy support
-                targetView.classList.add('active-view');
-                console.log(`Showing view: view-${targetId}`);
-            } else {
-                console.error(`Target view not found: view-${targetId}`);
+                targetView.classList.remove('hidden');
             }
 
             // Update page title
@@ -314,25 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update New Patient Button Visibility
             updateNewPatientButtonVisibility(targetId);
-
-            // Lazy Load Letters Module
-            if (targetId === 'letters') {
-                initLettersModule();
-            }
         });
     });
 
-    // Initialize with Dashboard active
-    // We need to ensure Dashboard is shown on load
-    const initDashboard = () => {
-        const dashboard = document.getElementById('view-dashboard');
-        if (dashboard) {
-            dashboard.classList.add('active-view');
-            dashboard.classList.remove('hidden');
-        }
-    };
-    initDashboard();
-
+    // Initialize with Dashboard active and patient tabs disabled
     updateNavigationState(false);
     updateNewPatientButtonVisibility('dashboard');
     document.querySelector('[data-target="dashboard"]').click();
@@ -456,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDelete.innerHTML = '<i class="fas fa-trash-alt fa-lg"></i>';
             btnDelete.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm(`àtes-vous sûr de vouloir supprimer le dossier de ${patient.lastName} ${patient.firstName} ?`)) {
+                if (confirm(`Êtes-vous sûr de vouloir supprimer le dossier de ${patient.lastName} ${patient.firstName} ?`)) {
                     try {
                         await window.electronAPI.deletePatient(patient.db_id);
                         loadDashboardData(); // Refresh list
@@ -536,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 el.disabled = false;
                 el.readOnly = false;
             });
-            document.getElementById('inp-age').value = '--';
+            document.getElementById('calc-age').textContent = '--';
             document.getElementById('calc-duration').textContent = '--';
 
             // Hide Banner
@@ -547,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateNavigationState(true);
 
             // Switch to Identity View
-            const identityBtn = document.querySelector('[data-target="identity-protocols"]');
+            const identityBtn = document.querySelector('[data-target="identity"]');
             if (identityBtn) identityBtn.click();
         });
     }
@@ -597,25 +534,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     afib: document.getElementById('other-afib').value,
                     foot: document.getElementById('other-foot').value,
                     liver: document.getElementById('other-liver').value
-                },
-                others: {
-                    hf: document.getElementById('other-hf').value,
-                    afib: document.getElementById('other-afib').value,
-                    foot: document.getElementById('other-foot').value,
-                    liver: document.getElementById('other-liver').value
                 }
-            },
-            protocols: (() => {
-                const p = {};
-                ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(key => {
-                    const cb = document.getElementById(`proto-${key}`);
-                    const dateInp = document.getElementById(`date-${key}`);
-                    if (cb && cb.checked) {
-                        p[key] = dateInp.value || new Date().toISOString().split('T')[0];
-                    }
-                });
-                return p;
-            })()
+            }
         };
 
         try {
@@ -683,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'risk-dyslipidemia', 'risk-tobacco', 'risk-heredity',
         'macro-avc', 'macro-coronary', 'macro-aomi', 'macro-stenosis',
         'micro-retino', 'micro-nephro', 'micro-neuro-sens', 'micro-neuro-auto',
-        'other-hf', 'other-af',
+        'other-hf', 'other-afib', 'other-foot', 'other-liver',
         'inp-gender', 'inp-gp'
     ];
 
@@ -715,10 +635,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (inpDiagnosisYear) {
-        // Diagnosis Year moved to Medical Profile
-        // Listener will be re-attached or handled via 'change' event on the new element
         inpDiagnosisYear.addEventListener('input', (e) => {
             updateDuration(e.target.value);
+            // specific listener above handles save
         });
     }
 
@@ -737,194 +656,17 @@ document.addEventListener('DOMContentLoaded', () => {
     initEducationModule();
     initSynthesisModule();
     if (window.initPharmaBook) window.initPharmaBook();
-    if (window.initTemplateManager) window.initTemplateManager();
-    if (window.initTemplateManager) window.initTemplateManager();
-    initProtocolLogic(() => saveIdentityForm(false)); // Pass auto-save callback
 });
 
-// --- Protocol Logic ---
-// --- Protocol Logic ---
-function initProtocolLogic(onSaveCallback) {
-    const protocols = ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'];
-
-    // Shared visual update function
-    window.updateProtocolCardVisuals = (p) => {
-        const checkbox = document.getElementById(`proto-${p}`);
-        const card = document.getElementById(`card-${p}`);
-        if (!checkbox || !card) return;
-
-        const color = checkbox.dataset.color || 'blue';
-
-        if (checkbox.checked) {
-            // Active
-            card.classList.remove('bg-gray-50', 'border-gray-200', 'hover:border-blue-300');
-            card.classList.add(`bg-${color}-50`, `border-${color}-300`);
-        } else {
-            // Inactive
-            card.classList.remove(`bg-${color}-50`, `border-${color}-300`);
-            card.classList.add('bg-gray-50', 'border-gray-200', 'hover:border-blue-300');
-        }
-    };
-
-    protocols.forEach(p => {
-        const checkbox = document.getElementById(`proto-${p}`);
-        const dateInput = document.getElementById(`date-${p}`);
-
-        if (checkbox) {
-            checkbox.addEventListener('change', () => {
-                // Update Style
-                window.updateProtocolCardVisuals(p);
-
-                // Auto-Populate Date
-                if (checkbox.checked && dateInput && !dateInput.value) {
-                    dateInput.valueAsDate = new Date();
-                }
-
-                // Notification
-                if (checkbox.checked) {
-                    const protocolNames = {
-                        dt2: 'Diabète Type 2',
-                        rcva: 'Risque CV Absolu',
-                        smoke: 'Sevrage Tabagique',
-                        asthme: 'Asthme',
-                        bpco: 'BPCO',
-                        prev: 'Prévention Syst.',
-                        cog: 'Troubles Cognitifs'
-                    };
-                    showNotification(`Patient inclus dans le protocole : ${protocolNames[p] || p.toUpperCase()}`, 'success');
-                }
-
-                // Update Sidebar and Badges
-                updateSidebarVisibility();
-                updateProtocolBadges();
-
-                if (onSaveCallback) onSaveCallback();
-            });
-
-            // Also save on date change
-            dateInput.addEventListener('change', () => {
-                if (onSaveCallback) onSaveCallback();
-            });
-        }
-    });
-}
-
-function updateProtocolBadges(overrideProtocols = null) {
-    const container = document.getElementById('protocol-badges');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    let active = {};
-    if (overrideProtocols) {
-        active = overrideProtocols;
-    } else {
-        ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
-            const cb = document.getElementById(`proto-${p}`);
-            if (cb && cb.checked) active[p] = true;
-        });
-    }
-
-    // Definitions
-    const definitions = [
-        { key: 'rcva', label: 'RCVA', color: 'bg-red-100 text-red-800' },
-        { key: 'dt2', label: 'DT2', color: 'bg-yellow-100 text-yellow-800' },
-        { key: 'smoke', label: 'BAT', color: 'bg-blue-100 text-blue-800' }, // BAT = Smoke/Asthme/BPCO group
-        { key: 'asthme', label: 'BAT', color: 'bg-blue-100 text-blue-800' },
-        { key: 'bpco', label: 'BAT', color: 'bg-blue-100 text-blue-800' },
-        { key: 'cog', label: 'Tb Cog', color: 'bg-green-100 text-green-800' },
-        { key: 'prev', label: 'Prev', color: 'bg-purple-100 text-purple-800' }
-    ];
-
-    const badges = new Set(); // Avoid duplicates for BAT group
-
-    definitions.forEach(def => {
-        if (active[def.key]) {
-            const id = `${def.label}-${def.color}`;
-            if (!badges.has(id)) {
-                badges.add(id);
-                const span = document.createElement('span');
-                // Revert size for banner: text-[10px], standard padding
-                span.className = `inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none uppercase tracking-wide opacity-90 ${def.color}`;
-                span.textContent = def.label;
-                container.appendChild(span);
-            }
-        }
-    });
-}
-
-function updateSidebarVisibility(overrideProtocols = null) {
-    // Determine active protocols
-    let activeProtocols = {};
-
-    if (overrideProtocols) {
-        activeProtocols = overrideProtocols;
-    } else {
-        // Read from DOM
-        ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
-            const cb = document.getElementById(`proto-${p}`);
-            if (cb && cb.checked) activeProtocols[p] = true;
-        });
-    }
-
-    // Logic for Tabs
-    // PROFILE (Risk Grid) -> DT2 or RCVA
-    const showProfile = activeProtocols.dt2 || activeProtocols.rcva;
-    toggleNav('patient-profile', showProfile);
-
-    // Strict Visibility: Hide Bio, Exams, Treatments, ETP, Synthesis if !DT2 (RCVA does not use these)
-    const isDiabetes = activeProtocols.dt2;
-    const medicalTabs = ['followup', 'exams', 'treatments', 'education', 'synthesis'];
-    medicalTabs.forEach(tab => {
-        toggleNav(tab, isDiabetes);
-    });
-
-    // RESPIRATORY -> Asthma or BPCO or Smoke
-    const showResp = activeProtocols.asthme || activeProtocols.bpco || activeProtocols.smoke;
-    toggleNav('respiratory', showResp);
-
-    // PREVENTION -> Prev
-    toggleNav('prevention', activeProtocols.prev);
-
-    // COGNITIVE -> Cog
-    toggleNav('cognitive', activeProtocols.cog);
-
-    // Show/Hide Specific Protocols Header
-    const hasSpecific = showResp || activeProtocols.prev || activeProtocols.cog;
-    const header = document.getElementById('section-protocols');
-    if (header) {
-        if (hasSpecific) header.classList.remove('hidden');
-        else header.classList.add('hidden');
-    }
-}
-
-function toggleNav(targetId, visible) {
-    const item = document.getElementById(`nav-item-${targetId.replace('patient-', '')}`); // nav-item-profile vs patient-profile
-    // My IDs in HTML: nav-item-profile, nav-item-respiratory, etc.
-    // targetId: patient-profile -> nav-item-profile? Yes.
-    // targetId: respiratory -> nav-item-respiratory.
-
-    let domId = `nav-item-${targetId}`;
-    if (targetId === 'patient-profile') domId = 'nav-item-profile';
-
-    const el = document.getElementById(domId);
-    if (el) {
-        if (visible) el.classList.remove('hidden');
-        else el.classList.add('hidden');
-    }
-}
-
-// Helper Functions
 // Helper Functions
 function updateAge(birthDateStr) {
-    const el = document.getElementById('inp-age');
-    if (!el) return;
+    const el = document.getElementById('calc-age');
     if (!birthDateStr) {
-        el.value = '--';
+        el.textContent = '--';
         return;
     }
     const age = calculateAge(birthDateStr);
-    el.value = age + ' ans';
+    el.textContent = age + ' ans';
 }
 
 const calculateAge = (birthDate) => {
@@ -938,28 +680,6 @@ const calculateAge = (birthDate) => {
     }
     return age;
 };
-
-// Restore updateDuration
-const updateDuration = (yearStr) => {
-    const el = document.getElementById('calc-duration');
-    if (!el) return;
-
-    if (!yearStr) {
-        el.textContent = '--';
-        return;
-    }
-
-    const start = parseInt(yearStr);
-    const current = new Date().getFullYear();
-    const duration = current - start;
-
-    if (isNaN(duration) || duration < 0) {
-        el.textContent = '--';
-    } else {
-        el.textContent = duration + ' ans';
-    }
-};
-
 
 function debounce(func, wait) {
     let timeout;
@@ -1027,7 +747,17 @@ function shakeElement(elementIdOrClass) {
         setTimeout(() => el.classList.remove('shake'), 500);
     }
 }
-
+function updateDuration(yearStr) {
+    const el = document.getElementById('calc-duration');
+    if (!yearStr) {
+        el.textContent = '--';
+        return;
+    }
+    const year = parseInt(yearStr);
+    const currentYear = new Date().getFullYear();
+    const duration = currentYear - year;
+    el.textContent = (duration >= 0 ? duration : 0) + ' ans';
+}
 
 
 // --- Risk Factor Listeners (Trigger Score Update) ---
@@ -1684,7 +1414,6 @@ function formatValueForDisplay(value, type, targetUnit) {
     if (targetUnit === rules.base) {
         // Even for base, round nicely to avoid Float errors (e.g. 1.1 + 0.2 = 1.300000001)
         if (type === 'rac') return Math.round(value).toFixed(0);
-        if (type === 'creat') return parseFloat(value.toFixed(2));
         return parseFloat(value.toFixed(2));
     }
 
@@ -1944,7 +1673,6 @@ function setupUnitToggles() {
                 }
             }
 
-            // Recalculate Derived stats (Score2, DFG)
             // Recalculate Derived stats (Score2, DFG)
             updateBiologicalCalculations();
         });
@@ -2405,9 +2133,9 @@ function showScore2DModal() {
     } else if (isNaN(age) || age < 40 || age >= 70) { // Note: calculations.js says >=70 excludes.
         content = `
             <div class="p-3 bg-blue-50 border border-blue-200 rounded text-blue-700">
-                <h4 class="font-bold mb-1"><i class="fas fa-info-circle"></i> Non àligible au Calcul</h4>
-                <p>Le modèle SCORE2-Diabetes n'est validé que pour les patients à¢gés de <strong>40 à 69 ans</strong>.</p>
-                <p class="mt-2 text-xs text-gray-500">àge actuel : ${isNaN(age) ? '--' : age} ans.</p>
+                <h4 class="font-bold mb-1"><i class="fas fa-info-circle"></i> Non Éligible au Calcul</h4>
+                <p>Le modèle SCORE2-Diabetes n'est validé que pour les patients âgés de <strong>40 à 69 ans</strong>.</p>
+                <p class="mt-2 text-xs text-gray-500">Âge actuel : ${isNaN(age) ? '--' : age} ans.</p>
             </div>
         `;
     } else {
@@ -2454,25 +2182,23 @@ function renderHistoryTable(history) {
     const thead = document.querySelector('#bio-history-table thead');
     if (!tbody || !thead) return;
 
-    // Fixed Headers (Requested: Bold Label, lowercase unit, fixed units)
-    const thClass = "px-3 py-2 bg-gray-50 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200";
-
+    // Update Header to include units (Fixed Standard)
     thead.innerHTML = `
         <tr>
-            <th class="${thClass}">Date</th>
-            <th class="${thClass}">Poids<br><span class="text-[10px] font-normal text-gray-500 lowercase">(kg)</span></th>
-            <th class="${thClass}">IMC<br><span class="text-[10px] font-normal text-gray-500 lowercase">(kg/m²)</span></th>
-            <th class="${thClass}">PAS<br><span class="text-[10px] font-normal text-gray-500 lowercase">(mmhg)</span></th>
-            <th class="${thClass}">PAD<br><span class="text-[10px] font-normal text-gray-500 lowercase">(mmhg)</span></th>
-            <th class="${thClass}">Créat<br><span class="text-[10px] font-normal text-gray-500 lowercase">(µmol/l)</span></th>
-            <th class="${thClass}">DFG<br><span class="text-[10px] font-normal text-gray-500 lowercase">(ml/min)</span></th>
-            <th class="${thClass}">RAC<br><span class="text-[10px] font-normal text-gray-500 lowercase">(mg/mmol)</span></th>
-            <th class="${thClass}">CT<br><span class="text-[10px] font-normal text-gray-500 lowercase">(g/l)</span></th>
-            <th class="${thClass}">TG<br><span class="text-[10px] font-normal text-gray-500 lowercase">(g/l)</span></th>
-            <th class="${thClass}">LDLc<br><span class="text-[10px] font-normal text-gray-500 lowercase">(g/l)</span></th>
-            <th class="${thClass}">HbA1c<br><span class="text-[10px] font-normal text-gray-500 lowercase">(%)</span></th>
-            <th class="${thClass}">SCORE2<br><span class="text-[10px] font-normal text-gray-500 lowercase">(%)</span></th>
-            <th class="${thClass}">Actions</th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids<br><span class="text-xs normal-case">(kg)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IMC<br><span class="text-xs normal-case">(kg/m²)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PAS<br><span class="text-xs normal-case">(mmHg)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PAD<br><span class="text-xs normal-case">(mmHg)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créat<br><span class="text-xs normal-case">(µmol/L)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DFG<br><span class="text-xs normal-case">(ml/min)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RAC<br><span class="text-xs normal-case">(mg/mmol)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CT<br><span class="text-xs normal-case">(g/L)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TG<br><span class="text-xs normal-case">(g/L)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LDLc<br><span class="text-xs normal-case">(g/L)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HbA1c<br><span class="text-xs normal-case">(%)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SCORE2<br><span class="text-xs normal-case">(%)</span></th>
+            <th class="px-4 py-2 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
         </tr>
     `;
 
@@ -2486,39 +2212,105 @@ function renderHistoryTable(history) {
     history.forEach((entry, index) => {
         const row = document.createElement('tr');
 
-        // FORCE FIXED CONVERSIONS for Table Display
-        // Creat: Base(mg/L) -> µmol/L (Factor 8.84)
-        // RAC: Base(mg/g) -> mg/mmol (Factor 0.113)
-        // Lipids: Base(g/L) -> g/L (No conversion)
+        // --- DATA PREPARATION (Fixed Units) ---
 
-        const dispCreat = formatValueForDisplay(entry.creat, 'creat', 'µmol/L'); // Base -> Derived
-        const dispRac = formatValueForDisplay(entry.rac, 'rac', 'mg/mmol'); // Base -> Derived
+        // Creatinine: Stored in Base (µmol/L or mg/L? logic says base is mg/L from conversions?) 
+        // Let's re-verify normalizeValue logic in code.
+        // creat.toUmol = val * 8.84. implies Base was mg/L?
+        // Wait, normalizeValue: 
+        // if unit == 'mg/dL' (incorrect unit string in earlier code?) -> convert to base.
+        // Let's assume standard behavior:
+        // By default, if we store µmol/L as base?
+        // Actually, looking at `toUmol: (val) => val * 8.84`, this implies input was mg/L.
+        // So BASE IS mg/L.
+        // We want Table in µmol/L. So we MUST convert Base(mg/L) * 8.84.
 
-        // Lipids (Base is g/L, Target is g/L)
-        const dispLipids = (val) => formatValueForDisplay(val, 'lipid', 'g/L');
+        // RAC:
+        // toMgMmol: val / 8.84. Implies Base is mg/g.
+        // Table wants mg/mmol. So Base(mg/g) / 8.84.
+        // And Round to integer.
 
-        // Score Icon Logic
-        let iconHtml = '<span class="text-gray-400">-</span>';
-        if (entry.score2d === 'N/A' || entry.score2d === 'T. Élevé' || entry.score2d === 'T. à‰levé') { // Handle legacy corrupt too if present
-            // Override or Ineligible
-            const isOverride = (entry.score2d === 'T. Élevé' || entry.score2d === 'T. à‰levé');
-            // For table we just want the text or icon?
-            // User just mentioned "T. Élevé" display.
-            // If stored as text "T. Élevé", display it.
-            const val = (entry.score2d === 'T. à‰levé') ? 'T. Élevé' : entry.score2d;
-            const colorClass = (val === 'T. Élevé') ? 'text-red-600 font-bold' : 'text-orange-500 font-bold';
-            iconHtml = `<span class="${colorClass} text-xs">${val}</span>`;
-        } else if (entry.score2d) {
-            // Calculated
-            const val = entry.score2d;
-            const colorClass = getScoreColorClass(val);
-            iconHtml = `<span class="font-bold ${colorClass}">${val}</span>`;
-        } else {
-            // Check if it should have been calculated?
-            // Just show ? if missing
-            const hasMissing = !entry.sys || !entry.ct || !entry.hdl || !entry.dfg || !entry.hba1c;
+        // Lipids:
+        // toMmol: val * 2.586. Implies Base is g/L.
+        // Table wants g/L. So Display Base directly.
+
+        // NOTE: If my assumption about "Base Unit" is wrong, I might invert conversions.
+        // Checking `CONVERSION_FACTORS`:
+        // lipid.toMmol = val * 2.586. This converts g/L -> mmol/L. So Base is g/L. Correct.
+        // creat.toUmol = val * 8.84. This converts mg/L -> µmol/L. So Base is mg/L. Correct.
+        // rac.toMgMmol = val / 8.84. This converts mg/g -> mg/mmol. So Base is mg/g. Correct.
+
+        const dispCreat = entry.creat ? (entry.creat * 8.84).toFixed(0) : '-'; // Base(mg/L) -> µmol/L
+
+        let dispRac = '-';
+        if (entry.rac) {
+            const racVal = entry.rac / 8.84; // Base(mg/g) -> mg/mmol
+            dispRac = Math.round(racVal).toFixed(0); // Round to integer as requested
+        }
+
+        const dispLipids = (val) => val ? parseFloat(val).toFixed(2) : '-'; // Base is g/L, matches Table Req.
+
+        // Determine Risk Icon State for this Entry
+        // Re-evaluate risk state based on entry data + current persistent risk factors
+        const entryDate = new Date(entry.date);
+        const birthDate = new Date(currentPatient.birthDate);
+        let ageAtEntry = entryDate.getFullYear() - birthDate.getFullYear();
+        // Adjust if birth month/day hasn't occurred yet in that year (simple approx ok for now, or precise)
+        const m = entryDate.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && entryDate.getDate() < birthDate.getDate())) {
+            ageAtEntry--;
+        }
+
+        // 1. Check Exclusion (Red !) - ASCVD (Global) or TOD (Entry specific)
+        // Check Global ASCVD
+        const macroIds = ['macro-coronary', 'macro-aomi', 'macro-stenosis', 'macro-avc'];
+        const hasASCVD = macroIds.some(id => document.getElementById(id) && document.getElementById(id).value === 'OUI');
+
+        // Check Entry TOD
+        const entryDFG = parseFloat(entry.dfg);
+        let isSevereTOD = false;
+        if (!isNaN(entryDFG)) {
+            if (entryDFG < 45) isSevereTOD = true;
+            // We could check RAC/Micro here too if we assume current Micro applies or if we store it.
+            // For now, let's use the helper logic if we can, but assessVeryHighRisk reads DOM.
+            // Let's replicate inline for entry-specifics + global micro.
+            const microIds = ['micro-retino', 'micro-nephro', 'micro-neuro-sens', 'micro-neuro-auto'];
+            const microCount = microIds.filter(id => document.getElementById(id) && document.getElementById(id).value === 'OUI').length;
+
+            // Normalize RAC from entry (Base mg/g?)
+            let entryRac = 0;
+            if (entry.rac) entryRac = entry.rac; // Stored as mg/g base
+
+            if (entryDFG >= 45 && entryDFG <= 59 && entryRac >= 30) isSevereTOD = true; // A2
+            if (entryRac > 300) isSevereTOD = true; // A3
+            if (microCount >= 3) isSevereTOD = true;
+        }
+
+        let iconHtml = '';
+
+        // PRIORITY 1: RED ! (Exclusion / Very High Risk)
+        if (hasASCVD || isSevereTOD) {
+            iconHtml = `<i class="fas fa-exclamation text-red-600 text-lg" title="Risque Très Élevé (Override)"></i>`;
+        }
+        // PRIORITY 2: ORANGE ! (Age Inappropriate)
+        else if (ageAtEntry < 40 || ageAtEntry >= 70) {
+            iconHtml = `<i class="fas fa-exclamation text-orange-500 text-lg" title="Non éligible (Age: ${ageAtEntry} ans)"></i>`;
+        }
+        // PRIORITY 3: GREY ? (Missing Data)
+        // Check entry fields
+        else {
+            // We need to check if SCORE is calculated. 
+            // If calculateScore returns null/empty but no override and age is ok, it's missing data.
+            // OR check columns directly.
+            const hasMissing = !entry.sys || !entry.ct || !entry.hdl || !entry.dfg || !entry.hba1c; // Basic check
             if (hasMissing) {
                 iconHtml = `<i class="fas fa-question text-gray-400 text-lg" title="Données manquantes"></i>`;
+            } else {
+                // PRIORITY 4: VALID SCORE (Display Value in %)
+                // User request: "display the value in %"
+                const val = entry.score2d || '-';
+                const colorClass = getScoreColorClass(val);
+                iconHtml = `<span class="font-bold ${colorClass}">${val}</span>`;
             }
         }
 
@@ -2874,7 +2666,7 @@ function initTreatmentsModule() {
     if (copyBtn) {
         copyBtn.addEventListener('click', () => {
             if (!currentPatient || !currentPatient.treatments || currentPatient.treatments.length === 0) {
-                showNotification('Aucune prescription ï¿½ï¿½ copier.', 'warning');
+                showNotification('Aucune prescription �� copier.', 'warning');
                 return;
             }
 
@@ -2950,7 +2742,7 @@ function initTreatmentsModule() {
 // Add Treatment
 async function addTreatment(med) {
     if (!currentPatient) {
-        showNotification('Veuillez d\'abord crï¿½ï¿½er ou ouvrir un patient.', 'error');
+        showNotification('Veuillez d\'abord cr��er ou ouvrir un patient.', 'error');
         return;
     }
 
@@ -3448,7 +3240,7 @@ function renderSynthesisChart() {
         pas: { val: null, date: null, min: 90, max: 180, step: 10, decimals: 0, label: 'PAS (mmHg)' },
         ldl: { val: null, date: null, min: 0.4, max: 2.2, step: 0.2, decimals: 2, label: 'LDLc (g/L)' }, // Decimals 2
         tg: { val: null, date: null, min: 0.4, max: 4.0, step: 0.4, decimals: 2, label: 'TG (g/L)' }, // Decimals 2
-        imc: { val: null, date: null, min: 18, max: 45, step: 3, decimals: 1, label: 'IMC (kg/mÂ²)' },
+        imc: { val: null, date: null, min: 18, max: 45, step: 3, decimals: 1, label: 'IMC (kg/m²)' },
         score: { val: null, date: null, min: 2, max: 20, step: 2, decimals: 0, label: 'SCORE2 (%)' }
     };
 
@@ -3922,7 +3714,7 @@ function renderObjectivesModule() {
 
     // Helper: Determine Trend Icon
     const getTrendIcon = (curr, prev) => {
-        if (curr === null || prev === null) return '<div class="w-6 h-6 rounded bg-gray-200 flex items-center justify-center mx-auto"><span class="text-gray-500 font-bold text-xs">â¢</span></div>';
+        if (curr === null || prev === null) return '<div class="w-6 h-6 rounded bg-gray-200 flex items-center justify-center mx-auto"><span class="text-gray-500 font-bold text-xs">•</span></div>';
         const diff = curr - prev;
         const threshold = 0.01;
 
@@ -4330,7 +4122,7 @@ window.editEtpSession = (id) => {
 };
 
 window.deleteEtpSessionRef = async (id) => {
-    if (confirm("àtes-vous sûr de vouloir supprimer cette séance du référentiel ?")) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette séance du référentiel ?")) {
         try {
             await window.electronAPI.deleteEtpSession(id);
             showNotification("Séance supprimée", "success");
@@ -4384,7 +4176,6 @@ async function saveEtpSession() {
 document.addEventListener('DOMContentLoaded', () => {
     initEtpLibrary();
     initEducationModule(); // Ensure Education Dashboard renders empty/placeholder if no patient open, or sets up listeners
-    initSummaryModule();
 });
 
 // --- ALLERGIES & INTOLERANCES MODULE ---
@@ -4546,30 +4337,13 @@ function initSummaryModule() {
     const editor = document.getElementById('summary-editor');
 
     if (btnGenerate && editor && selectTemplate) {
-        btnGenerate.addEventListener('click', async () => {
+        btnGenerate.addEventListener('click', () => {
             if (!currentPatient) {
                 showNotification("Veuillez d'abord ouvrir un dossier patient.", "warning");
                 return;
             }
             try {
-                let text = "";
-                const val = selectTemplate.value;
-
-                if (val.startsWith('custom_')) {
-                    const id = parseInt(val.replace('custom_', ''));
-                    // Fetch templates to find the content
-                    // Optimization: Could cache this list or add specific API
-                    const templates = await window.electronAPI.getTemplates();
-                    const tpl = templates.find(t => t.id === id);
-                    if (tpl) {
-                        text = window.renderTemplate(tpl.content, currentPatient);
-                    } else {
-                        text = "Erreur: Modèle introuvable (peut-être supprimé ?).";
-                    }
-                } else {
-                    text = window.generateSummary(currentPatient, val);
-                }
-
+                const text = generateSummary(currentPatient, selectTemplate.value);
                 editor.value = text;
                 showNotification("Résumé généré avec succès", "success");
             } catch (err) {
@@ -4584,7 +4358,7 @@ function initSummaryModule() {
             if (!editor.value) return;
             navigator.clipboard.writeText(editor.value)
                 .then(() => showNotification("Copié dans le presse-papiers", "success"))
-                .catch(err => showNotification("à0 chec de la copie", "error"));
+                .catch(err => showNotification("�0 chec de la copie", "error"));
         });
     }
 
@@ -4628,7 +4402,7 @@ function printSummaryToPdf(text) {
                 ${formattedText}
             </div>
             <div class="footer">
-                <p>Généré par Diabetes Desktop Secure â¬ ¢ Données confidentielles</p>
+                <p>Généré par Diabetes Desktop Secure � � Données confidentielles</p>
             </div>
         </div>
     `;
@@ -4639,1063 +4413,3 @@ function printSummaryToPdf(text) {
     // Cleanup (Optional, or leave for next time)
     // printContainer.innerHTML = '';
 }
-
-// --- Template Manager Module ---
-
-async function initTemplateManager() {
-    const listContainer = document.getElementById('template-list-container');
-    const macroListContainer = document.getElementById('macro-list-container');
-    const editorPanel = document.getElementById('template-editor-panel');
-    const emptyState = document.getElementById('template-editor-empty');
-    const btnNew = document.getElementById('btn-new-template');
-
-    // Inputs
-    const inpName = document.getElementById('inp-tpl-name');
-    const inpCategory = document.getElementById('inp-tpl-category');
-    const inpContent = document.getElementById('inp-tpl-content');
-    const btnSave = document.getElementById('btn-save-template');
-    const btnEdit = document.getElementById('btn-edit-template');
-    const btnDelete = document.getElementById('btn-delete-template');
-
-    let currentTemplateId = null;
-
-    // Load available macros
-    renderMacroList();
-
-    // Load templates
-    await loadTemplatesList();
-
-    // --- Actions ---
-
-    // Inject "Gestion des Macros" button
-    if (btnNew && !document.getElementById('btn-manage-macros')) {
-        const btnMacros = document.createElement('button');
-        btnMacros.id = 'btn-manage-macros';
-        btnMacros.className = "flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm active:translate-y-0.5";
-        btnMacros.innerHTML = '<i class="fas fa-cubes text-purple-600"></i> Macros';
-        btnNew.parentNode.insertBefore(btnMacros, btnNew.nextSibling);
-
-        btnMacros.addEventListener('click', () => {
-            openMacroManager();
-        });
-    }
-
-    btnNew.addEventListener('click', () => {
-        currentTemplateId = null;
-        inpName.value = "";
-        inpCategory.value = "courrier";
-        inpContent.value = "";
-        showEditor(true);
-        inpName.focus();
-    });
-
-    btnSave.addEventListener('click', async () => {
-        if (!inpName.value.trim()) {
-            showNotification("Le nom du modèle est requis.", 'error');
-            return;
-        }
-
-        const data = {
-            name: inpName.value.trim(),
-            category: inpCategory.value,
-            content: inpContent.value
-        };
-
-        try {
-            if (currentTemplateId) {
-                await window.electronAPI.updateTemplate(currentTemplateId, data);
-                showNotification("Modèle mis à jour.");
-            } else {
-                const res = await window.electronAPI.createTemplate(data);
-                currentTemplateId = res.id;
-                showNotification("Modèle créé.");
-            }
-            await loadTemplatesList();
-            updateSynthesisDropdown(); // Refresh dropdown in other tab
-        } catch (err) {
-            console.error(err);
-            showNotification("Erreur lors de l'enregistrement", 'error');
-        }
-    });
-
-    if (btnEdit) {
-        btnEdit.addEventListener('click', () => {
-            if (!currentTemplateId) return;
-            showEditor(true);
-            inpContent.focus();
-            showNotification("Mode édition activé (les champs sont déverrouillés)");
-        });
-    }
-
-    btnDelete.addEventListener('click', async () => {
-        if (!currentTemplateId) return;
-        if (!confirm("Voulez-vous vraiment supprimer ce modèle ?")) return;
-
-        try {
-            await window.electronAPI.deleteTemplate(currentTemplateId);
-            showNotification("Modèle supprimé.");
-            currentTemplateId = null;
-            showEditor(false);
-            await loadTemplatesList();
-            updateSynthesisDropdown();
-        } catch (err) {
-            console.error(err);
-            showNotification("Erreur lors de la suppression", 'error');
-        }
-    });
-
-    function showEditor(show) {
-        if (show) {
-            editorPanel.classList.remove('hidden');
-            emptyState.classList.add('hidden');
-        } else {
-            editorPanel.classList.add('hidden');
-            emptyState.classList.remove('hidden');
-        }
-    }
-
-    async function loadTemplatesList() {
-        try {
-            const templates = await window.electronAPI.getTemplates();
-            listContainer.innerHTML = "";
-
-            if (templates.length === 0) {
-                listContainer.innerHTML = `<div class="text-center text-gray-400 text-sm py-4">Aucun modèle.</div>`;
-                return;
-            }
-
-            // Group by category
-            const grouped = templates.reduce((acc, t) => {
-                acc[t.category] = acc[t.category] || [];
-                acc[t.category].push(t);
-                return acc;
-            }, {});
-
-            Object.keys(grouped).forEach(cat => {
-                const catHeader = document.createElement('div');
-                catHeader.className = "px-3 py-1.5 bg-gray-100 text-xs font-bold text-gray-600 uppercase mt-2 first:mt-0";
-                catHeader.textContent = cat;
-                listContainer.appendChild(catHeader);
-
-                grouped[cat].forEach(t => {
-                    const item = document.createElement('div');
-                    item.className = "px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-gray-700 flex justify-between items-center transition-colors border-b border-gray-50 last:border-0";
-                    item.innerHTML = `<span>${t.name}</span> <i class="fas fa-chevron-right text-xs text-gray-300"></i>`;
-
-                    item.addEventListener('click', () => {
-                        selectTemplate(t);
-                    });
-
-                    listContainer.appendChild(item);
-                });
-            });
-
-        } catch (err) {
-            console.error(err);
-            listContainer.innerHTML = `<div class="text-red-500 text-sm p-4">Erreur chargement.</div>`;
-        }
-    }
-
-    function selectTemplate(t) {
-        currentTemplateId = t.id;
-        inpName.value = t.name;
-        inpCategory.value = t.category;
-        inpContent.value = t.content || "";
-        showEditor(true);
-    }
-
-    function renderMacroList() {
-        const macros = window.getAvailableMacros();
-        const container = document.getElementById('macro-list-container');
-        const filterSelect = document.getElementById('macro-category-filter');
-
-        container.innerHTML = "";
-
-        if (!macros || macros.length === 0) {
-            container.innerHTML = `<div class="p-4 text-xs text-gray-400 text-center italic">Aucune macro disponible.<br>Si les macros ont disparu, redémarrez l'application.</div>`;
-            return;
-        }
-
-        // Define Category Order
-        const orderedCategories = [
-            "Identité",
-            "Profil",
-            "Biologie",
-            "Date",
-            "Examens",
-            "Traitement",
-            "Signature",
-            "Autres",
-            "Textes Médicaux",
-            "Clinique",
-            "Statut"
-        ];
-
-        // 1. Populate Filter if empty
-        if (filterSelect && filterSelect.options.length === 0) {
-            orderedCategories.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
-                filterSelect.appendChild(opt);
-            });
-            // Select first by default
-            filterSelect.value = orderedCategories[0];
-
-            // Add listener
-            filterSelect.addEventListener('change', () => {
-                renderFilteredMacros(filterSelect.value);
-            });
-        }
-
-        // Helper to render filtered list
-        function renderFilteredMacros(category) {
-            container.innerHTML = "";
-
-            const filtered = macros.filter(m => m.category === category || (category === 'Autres' && !orderedCategories.includes(m.category)));
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="p-4 text-xs text-gray-400 text-center italic">Aucune macro dans cette catégorie.</div>`;
-                return;
-            }
-
-            const grid = document.createElement('div');
-            grid.className = "flex flex-wrap gap-2";
-
-            filtered.forEach(m => {
-                const chip = document.createElement('button');
-                // Colors
-                let colorClass = "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100";
-                if (m.type === 'text') colorClass = "bg-green-50 text-green-700 border-green-100 hover:bg-green-100";
-                if (m.type === 'value') colorClass = "bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100";
-                if (m.type === 'script') colorClass = "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100";
-
-                chip.className = `${colorClass} text-xs px-2 py-1.5 rounded border transition-colors shadow-sm text-left truncate max-w-full`;
-                chip.textContent = m.label;
-                chip.title = `Insérer {{${m.code || m.id}}}`; // Use code preferentially
-
-                // Use code if available for insertion
-                const macroCode = m.code || m.id;
-
-                chip.addEventListener('click', () => insertMacro(macroCode));
-                // Tooltip logic
-                chip.addEventListener('mouseenter', (e) => showMacroTooltip(e.target, macroCode));
-                chip.addEventListener('mouseleave', () => hideMacroTooltip());
-
-                grid.appendChild(chip);
-            });
-
-            container.appendChild(grid);
-        }
-
-        // Initial render
-        renderFilteredMacros(filterSelect ? filterSelect.value : orderedCategories[0]);
-    }
-    // Expose for external reload
-    window.renderMacroList = renderMacroList;
-
-    function insertMacro(macroId) {
-        const tag = `{{${macroId}}}`;
-        const start = inpContent.selectionStart;
-        const end = inpContent.selectionEnd;
-        const text = inpContent.value;
-
-        inpContent.value = text.substring(0, start) + tag + text.substring(end);
-        inpContent.focus();
-        inpContent.selectionStart = inpContent.selectionEnd = start + tag.length;
-    }
-
-    // Initialize Synthesis Dropdown Integration
-    updateSynthesisDropdown();
-}
-
-async function updateSynthesisDropdown() {
-    const select = document.getElementById('summary-template-select');
-    if (!select) return;
-
-    try {
-        const templates = await window.electronAPI.getTemplates();
-
-        // Clear options immediately before rendering to avoid race conditions (duplicates)
-        select.innerHTML = '<option value="" disabled selected>Choisir un modèle...</option>';
-
-        if (templates.length > 0) {
-            templates.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = `custom_${t.id}`;
-                opt.textContent = t.name;
-                select.appendChild(opt);
-            });
-        } else {
-            select.innerHTML += '<option value="" disabled>Aucun modèle disponible</option>';
-        }
-
-    } catch (err) {
-        console.error("Failed to load templates for dropdown", err);
-        // Fallback if DB fails
-        select.innerHTML = '<option value="" disabled selected>Erreur chargement</option>';
-        select.innerHTML += `
-            <option value="clinical">Résumé Clinique (Secours)</option>
-        `;
-    }
-}
-
-// --- LETTERS MODULE (COURRIERS REFACTOR) ---
-
-let lettersModuleInitialized = false;
-
-function initLettersModule() {
-    // Prevent double init listeners (though function is safe to call for reload)
-    // Actually we want to reload lists every time we enter the tab? Or just once?
-    // Let's reload lists on entry to ensure freshness.
-    loadLetterTemplates();
-
-    if (lettersModuleInitialized) return;
-    lettersModuleInitialized = true;
-
-    // Elements
-    const btnCreate = document.getElementById('btn-create-perso-template');
-    const btnCopy = document.getElementById('btn-copy-system-template');
-    const btnSave = document.getElementById('btn-save-perso-template');
-    const btnDelete = document.getElementById('btn-delete-perso-template');
-    const btnPrint = document.getElementById('btn-print-letter');
-    const editor = document.getElementById('letter-editor-content');
-
-    // Macro Search & Filter
-    const macroSearch = document.getElementById('macro-search-input');
-    const macroFilter = document.getElementById('macro-category-filter-letter');
-
-    // State
-    window.currentLetterState = {
-        id: null,
-        isSystem: false,
-        name: null,
-        category: 'courrier'
-    };
-
-    // Actions
-    btnCreate.addEventListener('click', () => setupLetterEditor(null, 'new'));
-
-    btnCopy.addEventListener('click', () => {
-        // Copy content, reset ID, set mode to Perso
-        if (!editor.value) return;
-        setupLetterEditor({
-            content: editor.value,
-            name: `Copie de ${window.currentLetterState.name || 'Modèle'}`,
-            category: 'courrier'
-        }, 'copy');
-        showNotification("Modèle copié. Vous pouvez maintenant le modifier et l'enregistrer.");
-    });
-
-    btnSave.addEventListener('click', async () => {
-        const content = editor.value;
-        if (!content.trim()) return showNotification("Le contenu est vide.", 'error');
-
-        let name = window.currentLetterState.name;
-
-        // If new or copy, ask for name
-        if (!window.currentLetterState.id) {
-            name = prompt("Nom du nouveau modèle :", name || "");
-            if (!name) return;
-        }
-
-        const data = {
-            name: name,
-            category: 'courrier', // Default to courrier for now, or add selector?
-            content: content,
-            is_system: 0
-        };
-
-        try {
-            if (window.currentLetterState.id) {
-                await window.electronAPI.updateTemplate(window.currentLetterState.id, data);
-                showNotification("Modèle mis à jour.");
-            } else {
-                const res = await window.electronAPI.createTemplate(data);
-                window.currentLetterState.id = res.id;
-                showNotification("Nouveau modèle créé.");
-            }
-            window.currentLetterState.name = name;
-            window.currentLetterState.isSystem = false;
-            updateLetterEditorUI();
-            loadLetterTemplates(); // Refresh lists
-        } catch (e) {
-            console.error(e);
-            showNotification("Erreur lors de l'enregistrement.", 'error');
-        }
-    });
-
-    btnDelete.addEventListener('click', async () => {
-        if (!window.currentLetterState.id || window.currentLetterState.isSystem) return;
-        if (!confirm("Supprimer ce modèle personnel ?")) return;
-
-        try {
-            await window.electronAPI.deleteTemplate(window.currentLetterState.id);
-            showNotification("Modèle supprimé.");
-            setupLetterEditor(null, 'new'); // Reset
-            loadLetterTemplates();
-        } catch (e) {
-            console.error(e);
-            showNotification("Erreur suppression.", 'error');
-        }
-    });
-
-    btnPrint.addEventListener('click', () => {
-        // Simple Print for now
-        // Ideally render markdown/HTML first?
-        // Using window.print() of the whole page is messy.
-        // We probably want a print preview modal or a specific print window.
-        // For now, let's use the existing print logic or just print the text? 
-        // Existing print logic `printPreview` in renderer uses `print-container`. I can reuse that!
-        // But `printPreview` expects `summaryData`.
-        // Let's create a specific print helper for raw text.
-        printLetterContent(editor.value);
-    });
-
-    // Macros
-    initLetterMacros(macroSearch, macroFilter);
-}
-
-async function loadLetterTemplates() {
-    try {
-        const templates = await window.electronAPI.getTemplates();
-        const listSystem = document.getElementById('list-templates-system');
-        const listPerso = document.getElementById('list-templates-perso');
-
-        listSystem.innerHTML = "";
-        listPerso.innerHTML = "";
-
-        // Separate
-        const systemTpls = templates.filter(t => t.is_system);
-        const persoTpls = templates.filter(t => !t.is_system);
-
-        // Render System
-        if (systemTpls.length === 0) listSystem.innerHTML = `<div class="text-xs text-gray-400 italic px-2">Aucun modèle.</div>`;
-        systemTpls.forEach(t => {
-            const el = createTemplateItem(t);
-            listSystem.appendChild(el);
-        });
-
-        // Render Perso
-        if (persoTpls.length === 0) listPerso.innerHTML = `<div class="text-xs text-gray-400 italic px-2">Aucun modèle personnel.</div>`;
-        persoTpls.forEach(t => {
-            const el = createTemplateItem(t);
-            listPerso.appendChild(el);
-        });
-
-    } catch (e) {
-        console.error("Error loading templates", e);
-    }
-}
-
-function createTemplateItem(t) {
-    const div = document.createElement('div');
-    div.className = "px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer rounded border border-transparent hover:border-blue-100 transition-colors flex items-center justify-between group";
-    div.innerHTML = `
-        <span class="truncate">${t.name}</span>
-        ${t.category === 'synthese' ? '<i class="fas fa-file-medical-alt text-gray-300 text-xs" title="Protocole"></i>' : ''}
-    `;
-    div.addEventListener('click', () => {
-        setupLetterEditor(t, 'load');
-    });
-    return div;
-}
-
-function setupLetterEditor(templateData, mode) {
-    const editor = document.getElementById('letter-editor-content');
-    const title = document.getElementById('editor-template-title');
-    const badge = document.getElementById('editor-template-badge');
-
-    // default state
-    let state = { id: null, isSystem: false, name: 'Nouveau Courrier', category: 'courrier' };
-    let content = "";
-
-    if (mode === 'load' && templateData) {
-        state = { id: templateData.id, isSystem: !!templateData.is_system, name: templateData.name, category: templateData.category };
-        content = templateData.content || "";
-    } else if (mode === 'copy' && templateData) {
-        state = { id: null, isSystem: false, name: templateData.name, category: templateData.category };
-        content = templateData.content || "";
-    } else if (mode === 'new') {
-        // defaults
-    }
-
-    // Update Global State
-    window.currentLetterState = state;
-
-    // Update UI Content
-    editor.value = content;
-    title.textContent = state.name;
-
-    // Badge
-    badge.classList.remove('hidden', 'bg-purple-100', 'text-purple-700', 'bg-blue-100', 'text-blue-700', 'bg-gray-100', 'text-gray-600');
-    if (state.isSystem) {
-        badge.textContent = "Système";
-        badge.classList.add('bg-purple-100', 'text-purple-700');
-        badge.classList.remove('hidden');
-        // Read Only Editor? No, allow edit for printing, just blocks saving.
-        // Actually user might want to fill placeholders.
-    } else if (state.id) {
-        badge.textContent = "Perso";
-        badge.classList.add('bg-blue-100', 'text-blue-700');
-        badge.classList.remove('hidden');
-    } else {
-        badge.textContent = "Nouveau";
-        badge.classList.add('bg-green-100', 'text-green-700');
-        badge.classList.remove('hidden');
-    }
-
-    updateLetterEditorUI();
-}
-
-function updateLetterEditorUI() {
-    const state = window.currentLetterState;
-    const btnCopy = document.getElementById('btn-copy-system-template');
-    const btnSave = document.getElementById('btn-save-perso-template');
-    const btnDelete = document.getElementById('btn-delete-perso-template');
-
-    if (state.isSystem) {
-        btnCopy.classList.remove('hidden');
-        btnSave.classList.add('hidden');
-        btnDelete.classList.add('hidden');
-    } else {
-        btnCopy.classList.add('hidden');
-        btnSave.classList.remove('hidden');
-        if (state.id) {
-            btnDelete.classList.remove('hidden');
-        } else {
-            btnDelete.classList.add('hidden');
-        }
-    }
-}
-
-// Reuse Macro list logic but adapted
-function initLetterMacros(searchInput, filterSelect) {
-    const container = document.getElementById('letters-macro-list');
-
-    // Load Dropdown Options (Category) - Reuse definitions
-    const orderedCategories = [
-        "Identité", "Profil", "Biologie", "Date", "Examens", "Traitement", "Signature", "Autres", "Textes Médicaux", "Clinique", "Statut"
-    ];
-
-    filterSelect.innerHTML = '<option value="All">Toutes catégories</option>';
-    orderedCategories.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        filterSelect.appendChild(opt);
-    });
-
-    const render = () => {
-        const macros = window.getAvailableMacros(); // from summary_engine
-        if (!macros) return;
-
-        const term = searchInput.value.toLowerCase();
-        const catFilter = filterSelect.value;
-
-        container.innerHTML = "";
-
-        const filtered = macros.filter(m => {
-            const matchesTerm = m.label.toLowerCase().includes(term) || m.code.toLowerCase().includes(term);
-            const matchesCat = catFilter === 'All' || m.category === catFilter;
-            return matchesTerm && matchesCat;
-        });
-
-        filtered.forEach(m => {
-            const chip = document.createElement('button');
-            let colorClass = "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100";
-            // Reuse Badge Logic roughly? Or simpler chips for list
-            if (m.type === 'text') colorClass = "bg-green-50 text-green-700 border-green-100 hover:bg-green-100";
-
-            chip.className = `w-full text-left mb-1 ${colorClass} text-xs px-2 py-1.5 rounded border transition-colors shadow-sm flex justify-between items-center group`;
-            chip.innerHTML = `<span>${m.label}</span> <span class="hidden group-hover:inline opacity-50 text-[10px]">{{${m.code}}}</span>`;
-            chip.title = `Insérer {{${m.code}}}`;
-
-            chip.addEventListener('click', () => {
-                insertMacroIntoEditor(m.code);
-            });
-            // Tooltip
-            chip.addEventListener('mouseenter', (e) => showMacroTooltip(e.target, m.code));
-            chip.addEventListener('mouseleave', () => hideMacroTooltip());
-
-            container.appendChild(chip);
-        });
-    };
-
-    searchInput.addEventListener('input', render);
-    filterSelect.addEventListener('change', render);
-
-    // Initial
-    render();
-}
-
-function insertMacroIntoEditor(code) {
-    const editor = document.getElementById('letter-editor-content');
-    const tag = `{{${code}}}`;
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    const text = editor.value;
-
-    editor.value = text.substring(0, start) + tag + text.substring(end);
-    editor.focus();
-    editor.selectionStart = editor.selectionEnd = start + tag.length;
-}
-
-function printLetterContent(content) {
-    // Replace macros with dummy or real data before print?
-    // Ideally we resolve macros first! 
-    // Wait, the user wants the letter generated.
-    let resolvedContent = content;
-    try {
-        if (currentPatient && window.resolveTemplate) {
-            // We can use resolveTemplate from summary_engine if we exposed it, or just resolve macros manually
-            resolvedContent = window.renderTemplate(content, currentPatient);
-        }
-    } catch (e) { console.error("Print resolution error", e); }
-
-    // Format for print
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>Impression Courrier</title>
-            <style>
-                body { font-family: 'Times New Roman', serif; padding: 40px; line-height: 1.5; font-size: 12pt; }
-                p { margin-bottom: 1em; }
-                .header { margin-bottom: 40px; }
-            </style>
-        </head>
-        <body>
-            <div class="content whitespace-pre-line">${resolvedContent.replace(/\n/g, '<br>')}</div>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
-}
-// --- Macro Tooltip Helper Variables & Functions ---
-
-let macroTooltip = null;
-
-function showMacroTooltip(targetEl, macroId) {
-    if (!macroTooltip) {
-        macroTooltip = document.createElement('div');
-        // Using Tailwind classes for styling
-        macroTooltip.className = "fixed z-[9999] bg-slate-800 text-white border border-slate-700 shadow-xl rounded px-3 py-2 text-xs max-w-sm pointer-events-none transition-opacity duration-200 opacity-0 font-medium";
-        document.body.appendChild(macroTooltip);
-    }
-
-    // Resolve Value using the global currentPatient
-    let val = "Error";
-    try {
-        // window.resolveMacro is defined in summary_engine.js
-        val = window.resolveMacro(macroId, currentPatient);
-    } catch (e) {
-        val = "Resolution Error";
-        console.error(e);
-    }
-
-    if (val === undefined || val === null) val = "N/A";
-
-    // Truncate if excessively long
-    const maxLength = 300;
-    const displayVal = val.toString().length > maxLength ? val.toString().substring(0, maxLength) + '...' : val;
-
-    macroTooltip.innerHTML = `<div class="text-[10px] text-slate-400 uppercase mb-1 border-b border-slate-600 pb-1">Aperçu : {{${macroId}}}</div><div class="whitespace-pre-wrap">${displayVal}</div>`;
-
-    // Position
-    const rect = targetEl.getBoundingClientRect();
-    const tooltipRect = macroTooltip.getBoundingClientRect();
-
-    // Calculate position - default below
-    let top = rect.bottom + 8;
-    let left = rect.left;
-
-    // Check bounds
-    if (left + 300 > window.innerWidth) {
-        left = window.innerWidth - 310;
-    }
-
-    // If running off bottom, put above
-    if (top + 150 > window.innerHeight) {
-        // Position above
-        // We need to estimate height if not rendered yet, but pointer-events-none allows us to render it and measure?
-        // It's opacity 0 but in DOM.
-        // Let's just try to measure or guess.
-        // Actually, since we appended it, we can measure it if we remove 'hidden' (which we didn't add, just opacity).
-        // But getBoundingClientRect might work if it's in the DOM.
-        const actualHeight = tooltipRect.height || 100;
-        top = rect.top - actualHeight - 8;
-    }
-
-    macroTooltip.style.top = `${top}px`;
-    macroTooltip.style.left = `${left}px`;
-
-    // Show
-    requestAnimationFrame(() => {
-        macroTooltip.classList.remove('opacity-0');
-    });
-}
-
-function hideMacroTooltip() {
-    if (macroTooltip) {
-        macroTooltip.classList.add('opacity-0');
-    }
-}
-
-// --- Macro Manager UI ---
-
-function openMacroManager() {
-    // 1. Create Modal if not exists
-    let modal = document.getElementById('modal-macro-manager');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-macro-manager';
-        modal.className = "fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden";
-        modal.innerHTML = `
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col mx-4">
-                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <i class="fas fa-cubes text-purple-600"></i> Gestion des Macros
-                    </h3>
-                    <button id="btn-close-macro-manager" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="text-sm text-gray-500">
-                            Les macros "Valeur" récupèrent des données. Les macros "Texte" insèrent des phrases fixes.
-                        </div>
-                        <button id="btn-create-macro" class="hidden flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm">
-                            <i class="fas fa-plus"></i> Nouvelle Macro (Bientôt)
-                        </button>
-                    </div>
-
-                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-gray-100/50 text-gray-500 font-semibold uppercase text-xs">
-                                <tr>
-                                    <th class="px-4 py-3 border-b border-gray-100">Macro ID</th>
-                                    <th class="px-4 py-3 border-b border-gray-100">Étiquette</th>
-                                    <th class="px-4 py-3 border-b border-gray-100">Catégorie</th>
-                                    <th class="px-4 py-3 border-b border-gray-100">Type</th>
-                                    <th class="px-4 py-3 border-b border-gray-100 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="macro-manager-list" class="divide-y divide-gray-100">
-                                <!-- Populated by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        modal.querySelector('#btn-close-macro-manager').addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-
-        // Close on esc
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                modal.classList.add('hidden');
-            }
-        });
-    }
-
-    renderMacroManagerList();
-    modal.classList.remove('hidden');
-}
-
-async function renderMacroManagerList() {
-    const tbody = document.getElementById('macro-manager-list');
-    if (!tbody) return;
-
-    // Ensure fresh data
-    await window.reloadMacros();
-
-    let fullMacros = [];
-    try {
-        fullMacros = await window.electronAPI.getMacros();
-    } catch (e) { console.error(e); }
-
-    tbody.innerHTML = '';
-
-    fullMacros.forEach(m => {
-        const row = document.createElement('tr');
-        row.className = "hover:bg-gray-50 transition-colors group";
-
-        let typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600">INCONNU</span>`;
-
-        if (m.type === 'script') typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">SCRIPT</span>`;
-        else if (m.type === 'quantitatif') typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-700 border border-teal-200">QUANT</span>`;
-        else if (m.type === 'qualitatif') typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">QUAL</span>`;
-        else if (m.type === 'text') typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">TEXTE</span>`;
-        else if (m.type === 'value') typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">VALEUR</span>`;
-
-        // Always allow editing now that we have a refactored system, 
-        // OR check if it's a legacy script that can't be edited easily.
-        // For now, allow all. The editor handles types.
-        let actionBtn = `
-            <button class="text-blue-600 hover:text-blue-800 p-1 transition-colors" onclick="editMacro('${m.id}')" title="Modifier">
-                <i class="fas fa-edit"></i>
-            </button>
-        `;
-
-        row.innerHTML = `
-            <td class="px-4 py-3 font-mono text-xs text-gray-500">{{${m.code}}}</td>
-            <td class="px-4 py-3 font-medium text-gray-800">${m.label}</td>
-            <td class="px-4 py-3 text-gray-600">${m.category}</td>
-            <td class="px-4 py-3">${typeBadge}</td>
-            <td class="px-4 py-3 text-right">${actionBtn}</td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-window.editMacro = async (id) => {
-    // Implement Edit Modal logic
-    // We need to fetch the specific macro (or find in list)
-    try {
-        const macros = await window.electronAPI.getMacros();
-        const macro = macros.find(m => m.id == id); // DB id is integer?
-        if (macro) openMacroEditor(macro);
-    } catch (e) { console.error(e); }
-};
-
-
-function openMacroEditor(macro) {
-    // Create Editor Modal if not exists
-    let modal = document.getElementById('modal-macro-editor');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-macro-editor';
-        modal.className = "fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-[60] hidden";
-        modal.innerHTML = `
-                <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
-                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                        <h3 class="text-lg font-bold text-gray-800" id="macro-editor-title">Éditer Macro</h3>
-                        <button id="btn-close-macro-editor" class="text-gray-400 hover:text-gray-600 transition-colors">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
-                    <div class="p-6 space-y-4 overflow-y-auto">
-                        <input type="hidden" id="inp-macro-id">
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Code (Identifiant)</label>
-                            <input type="text" id="inp-macro-code" disabled class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded text-gray-500 font-mono text-sm">
-                            <p class="text-xs text-gray-400 mt-1">L'identifiant unique ne peut pas être modifié.</p>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Étiquette (Nom visible)</label>
-                            <input type="text" id="inp-macro-label" class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-purple-100 focus:border-purple-400 outline-none transition-all">
-                        </div>
-
-                        <!-- Type Selector (Only editable if not system?? actually user wanted to create macros so type might be selectable for new ones, but this is edit) -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Type de Macro</label>
-                            <select id="inp-macro-type" class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-purple-100 focus:border-purple-400 outline-none transition-all">
-                                <option value="text">Texte Libre (Phrase fixe)</option>
-                                <option value="quantitatif">Valeur Quantitative (Numérique)</option>
-                                <option value="qualitatif">Valeur Qualitative (Oui/Non/Choix)</option>
-                            </select>
-                        </div>
-
-                        <!-- Fields for 'text' type -->
-                        <div id="field-macro-text" class="macro-field-group">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Contenu du Texte</label>
-                            <textarea id="inp-macro-template-text" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-purple-100 focus:border-purple-400 outline-none transition-all resize-none"></textarea>
-                            <p class="text-xs text-gray-400 mt-1">Ce texte remplacera le code {{...}} dans le document.</p>
-                        </div>
-
-                        <!-- Fields for 'value' types (Source Dropdown) -->
-                        <div id="field-macro-source" class="macro-field-group hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Source de la Donnée</label>
-                            <select id="inp-macro-source-select" class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-purple-100 focus:border-purple-400 outline-none transition-all">
-                                <!-- Populated from Dictionary -->
-                            </select>
-                            <p class="text-xs text-gray-400 mt-1">Sélectionnez la donnée patient à afficher.</p>
-                        </div>
-
-                    </div>
-                    <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end gap-3">
-                        <button id="btn-cancel-macro" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded shadow-sm">Annuler</button>
-                        <button id="btn-save-macro" class="px-4 py-2 text-white bg-purple-600 hover:bg-purple-700 rounded shadow-sm font-medium">Enregistrer</button>
-                    </div>
-                </div>
-            `;
-        document.body.appendChild(modal);
-
-        // Populate Source Dropdown
-        const sourceSelect = document.getElementById('inp-macro-source-select');
-        const sources = window.getMacroSources();
-
-        // 1. Group by Category
-        const groupedSources = sources.reduce((acc, src) => {
-            const cat = src.category || 'Autres';
-            acc[cat] = acc[cat] || [];
-            acc[cat].push(src);
-            return acc;
-        }, {});
-
-        // 2. Define Order (Same as Sidebar)
-        const displayOrder = [
-            "Identité",
-            "Profil",
-            "Biologie",
-            "Date",
-            "Examens",
-            "Traitement",
-            "Signature",
-            "Autres",
-            "Textes Médicaux",
-            "Clinique",
-            "Statut"
-        ];
-
-        // 3. Populate Select with Optgroups in Order
-        sourceSelect.innerHTML = "";
-
-        displayOrder.forEach(cat => {
-            if (groupedSources[cat]) {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = cat;
-
-                groupedSources[cat].forEach(src => {
-                    const opt = document.createElement('option');
-                    opt.value = src.id;
-                    opt.textContent = src.label;
-                    optgroup.appendChild(opt);
-                });
-
-                sourceSelect.appendChild(optgroup);
-            }
-        });
-
-        // 4. Handle any remaining categories not in displayOrder
-        Object.keys(groupedSources).forEach(cat => {
-            if (!displayOrder.includes(cat)) {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = cat;
-                groupedSources[cat].forEach(src => {
-                    const opt = document.createElement('option');
-                    opt.value = src.id;
-                    opt.textContent = src.label;
-                    optgroup.appendChild(opt);
-                });
-                sourceSelect.appendChild(optgroup);
-            }
-        });
-
-        // Handlers
-        const typeSelect = document.getElementById('inp-macro-type');
-        typeSelect.addEventListener('change', () => {
-            const val = typeSelect.value;
-            document.getElementById('field-macro-text').classList.toggle('hidden', val !== 'text');
-            document.getElementById('field-macro-source').classList.toggle('hidden', val === 'text');
-        });
-
-        const close = () => modal.classList.add('hidden');
-        modal.querySelector('#btn-close-macro-editor').addEventListener('click', close);
-        modal.querySelector('#btn-cancel-macro').addEventListener('click', close);
-
-        modal.querySelector('#btn-save-macro').addEventListener('click', async () => {
-            const id = document.getElementById('inp-macro-id').value;
-            const label = document.getElementById('inp-macro-label').value;
-            const type = document.getElementById('inp-macro-type').value;
-
-            const tplText = document.getElementById('inp-macro-template-text').value;
-            const sourcePath = document.getElementById('inp-macro-source-select').value;
-
-            // stash for hidden fields retention
-            const originalJson = document.getElementById('inp-macro-original')?.value;
-            if (!originalJson) return;
-            const original = JSON.parse(originalJson);
-
-            const finalData = {
-                ...original,
-                label: label,
-                type: type, // Now we update type!
-                // If type is text, save text, clear path? Or keep path as backup? 
-                // Cleaner to sync properly.
-                template_text: (type === 'text') ? tplText : null,
-                value_path: (type !== 'text') ? sourcePath : null
-            };
-
-            try {
-                await window.electronAPI.updateMacro(id, finalData);
-                close();
-                renderMacroManagerList();
-                await window.reloadMacros();
-            } catch (e) {
-                console.error("Failed to save macro", e);
-                alert("Erreur lors de l'enregistrement");
-            }
-        });
-    }
-
-    // Populate
-    document.getElementById('inp-macro-id').value = macro.id;
-    document.getElementById('inp-macro-code').value = macro.code;
-    document.getElementById('inp-macro-label').value = macro.label;
-
-    // Map old types to new types if needed
-    let typeVal = macro.type;
-    if (typeVal === 'value') typeVal = 'quantitatif'; // default mapping for legacy
-    if (typeVal === 'script') typeVal = 'text'; // Script macros shouldn't really be edited here but handled as read-only or special?
-    // Actually, if it's a script like 'risk_score', we probably shouldn't let them change it to a simple value unless they want to override the logic.
-    // For now, let's respect the type if it matches our options, else default to text?
-
-    const typeSelect = document.getElementById('inp-macro-type');
-    // Check if option exists
-    if (![...typeSelect.options].some(o => o.value === typeVal)) {
-        // If it's a script/system macro, maybe lock the type?
-        // For this refactor, let's assume valid types.
-        // But 'script' types from seed are tricky. 
-        // If the user wants to EDIT a script macro, they are likely converting it to a custom text.
-        // Let's force 'text' if unknown?
-    }
-    typeSelect.value = typeVal;
-
-    // Trigger change to show correct fields
-    typeSelect.dispatchEvent(new Event('change'));
-
-    // Values
-    if (macro.template_text) document.getElementById('inp-macro-template-text').value = macro.template_text;
-    if (macro.value_path) document.getElementById('inp-macro-source-select').value = macro.value_path;
-
-    // Store original
-    let stash = document.getElementById('inp-macro-original');
-    if (!stash) {
-        stash = document.createElement('input');
-        stash.type = 'hidden';
-        stash.id = 'inp-macro-original';
-        document.getElementById('modal-macro-editor').querySelector('.p-6').appendChild(stash);
-    }
-    stash.value = JSON.stringify(macro);
-
-    document.getElementById('modal-macro-editor').classList.remove('hidden');
-}
-
-// Global expose
-window.openMacroManager = openMacroManager;
-
-
-// Auto-init on load
-document.addEventListener('DOMContentLoaded', async () => {
-    if (window.reloadMacros) {
-        await window.reloadMacros();
-    }
-    if (window.initTemplateManager) {
-        window.initTemplateManager();
-    }
-});

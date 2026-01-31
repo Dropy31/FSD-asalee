@@ -7,13 +7,12 @@
     <meta http-equiv="Content-Security-Policy"
         content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;">
     <title>Suivi Diabète - Desktop Secure</title>
-    <!-- Using CDN for Tailwind for now since build process is manual -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Local Libraries -->
+    <link rel="stylesheet" href="tailwind_build.css">
+    <link rel="stylesheet" href="libs/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script
-        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="libs/chartjs/chart.umd.js"></script>
+    <script src="libs/chartjs-adapter/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 
 <body class="bg-gray-100 font-sans h-screen flex overflow-hidden">
@@ -37,6 +36,8 @@
                 <i class="fas fa-user-circle text-white text-lg"></i>
                 <span id="active-patient-name" class="font-medium text-white truncate">--</span>
             </div>
+            <!-- Badges Container moved here -->
+            <div id="protocol-badges" class="flex flex-nowrap overflow-hidden gap-1 mt-2 empty:hidden pl-3"></div>
         </div>
 
         <nav class="flex-1 overflow-y-auto py-4 space-y-6">
@@ -59,10 +60,18 @@
                         </button>
                     </li>
                     <li>
+                    <li>
                         <button
                             class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
                             data-target="pharma-book">
                             <i class="fas fa-pills w-6 text-center"></i> Livret Pharmaceutique
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="templates">
+                            <i class="fas fa-file-alt w-6 text-center"></i> Modèles
                         </button>
                     </li>
                 </ul>
@@ -75,49 +84,94 @@
                     <li>
                         <button
                             class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
-                            data-target="identity">
-                            <i class="fas fa-user w-6 text-center"></i> Profil
+                            data-target="identity-protocols">
+                            <i class="fas fa-id-card w-6 text-center"></i> Identité & Protocoles
+                        </button>
+                    </li>
+                    <li id="nav-item-profile" class="hidden">
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
+                            data-target="patient-profile">
+                            <i class="fas fa-heartbeat w-6 text-center"></i> Profil Médical
                             <i id="identity-alert-icon"
                                 class="fas fa-exclamation-circle text-red-500 absolute right-4 hidden animate-pulse"
                                 title="Mise à jour automatique: Néphropathie"></i>
                         </button>
                     </li>
-                    <li>
+                    <li id="nav-item-followup" class="hidden">
                         <button
                             class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
                             data-target="followup">
                             <i class="fas fa-chart-line w-6 text-center"></i> Suivi Biologique
                         </button>
                     </li>
-                    <li>
+                    <li id="nav-item-exams" class="hidden">
                         <button
                             class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
                             data-target="exams">
                             <i class="fas fa-calendar-check w-6 text-center"></i> Examens
                         </button>
                     </li>
-                    <li>
+                    <li id="nav-item-treatments" class="hidden">
                         <button
                             class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
                             data-target="treatments">
                             <i class="fas fa-prescription-bottle-alt w-6 text-center"></i> Traitements
                         </button>
                     </li>
-                    <li>
+                    <li id="nav-item-education" class="hidden">
                         <button
                             class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
                             data-target="education">
                             <i class="fas fa-graduation-cap w-6 text-center"></i> ETP
                         </button>
                     </li>
-                    <li>
+                    <li id="nav-item-synthesis" class="hidden">
                         <button
                             class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
                             data-target="synthesis">
                             <i class="fas fa-chart-pie w-6 text-center"></i> Synthèse
                         </button>
                     </li>
+                    <li>
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="letters">
+                            <i class="fas fa-envelope-open-text w-6 text-center"></i> Courriers
+                        </button>
+                    </li>
                 </ul>
+            </div>
+
+            <!-- SECTION: SPECIFIC PROTOCOLS -->
+            <div id="section-protocols" class="hidden">
+                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">Protocoles
+                    Spécifiques</h3>
+                <ul class="space-y-1">
+                    <li id="nav-item-respiratory" class="hidden">
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="respiratory">
+                            <i class="fas fa-lungs w-6 text-center"></i> Respiratoire
+                        </button>
+                    </li>
+                    <li id="nav-item-cognitive" class="hidden">
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="cognitive">
+                            <i class="fas fa-brain w-6 text-center"></i> Cognitif
+                        </button>
+                    </li>
+                    <li id="nav-item-prevention" class="hidden">
+                        <button
+                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                            data-target="prevention">
+                            <i class="fas fa-shield-alt w-6 text-center"></i> Prévention
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            </ul>
             </div>
         </nav>
 
@@ -211,77 +265,40 @@
                 </div>
             </div>
 
-            <!-- VIEW: IDENTITY & RISKS -->
-            <div id="view-identity" class="view-section hidden">
+            <!-- VIEW: PATIENT PROFILE (Risks) -->
+            <div id="view-patient-profile" class="view-section hidden">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-7xl mx-auto">
                     <div class="flex justify-between items-center mb-8 border-b pb-4">
-                        <h3 class="text-xl font-bold text-gray-800">Dossier Patient : Profil</h3>
-                        <!-- Save button removed as auto-save is active -->
+                        <h3 class="text-xl font-bold text-gray-800">Profil Médical & Facteurs de Risque</h3>
                     </div>
-
-                    <form id="form-identity" class="space-y-8">
-                        <input type="hidden" id="patient-id">
-
-                        <!-- SECTION 1: IDENTITY -->
-                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
-                            <h4 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                                <i class="fas fa-user-circle text-blue-500"></i> Informations Administratives
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-600 mb-1">Nom</label>
-                                    <input type="text" id="inp-lastname"
-                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-600 mb-1">Prénom</label>
-                                    <input type="text" id="inp-firstname"
-                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-600 mb-1">Date de
-                                        Naissance</label>
-                                    <input type="date" id="inp-birthdate"
-                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-600 mb-1">Sexe</label>
-                                    <select id="inp-gender"
-                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
-                                        <option value="">Sélectionner...</option>
-                                        <option value="M">Homme</option>
-                                        <option value="F">Femme</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-600 mb-1">Année Diag.</label>
-                                    <input type="number" id="inp-diagnosis-year"
-                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-600 mb-1">Médecin Traitant</label>
-                                    <select id="inp-gp" class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
-                                        <option value="">Sélectionner...</option>
-                                        <option value="Dr MONTANE">Dr MONTANE</option>
-                                        <option value="Dr PEDESPAN">Dr PEDESPAN</option>
-                                        <option value="Dr COUPRY">Dr COUPRY</option>
-                                        <option value="Dr ROBERT ST V.">Dr ROBERT ST V.</option>
-                                        <option value="Autre">Autre</option>
-                                    </select>
-                                </div>
-                                <div class="bg-blue-50 rounded-lg border border-blue-100 p-2 text-center">
-                                    <span class="block text-xs font-semibold text-blue-600 uppercase">Âge</span>
-                                    <span id="calc-age" class="text-xl font-bold text-blue-800">--</span>
-                                </div>
-                                <div class="bg-green-50 rounded-lg border border-green-100 p-2 text-center">
-                                    <span class="block text-xs font-semibold text-green-600 uppercase">Ancienneté</span>
-                                    <span id="calc-duration" class="text-xl font-bold text-green-800">--</span>
-                                </div>
-                            </div>
-                        </div>
+                    <form id="form-profile" class="space-y-8">
 
                         <!-- SECTION 2: RISKS & COMPLICATIONS (New Layout) -->
                         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <!-- SECTION 1: DIABETES HISTORY (Moved here) -->
+                            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 flex items-center gap-6">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-history text-blue-500"></i>
+                                    <h4 class="font-bold text-blue-800">Historique Diabète</h4>
+                                </div>
+
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-sm font-medium text-blue-700">Année Diagnostic :</label>
+                                        <input type="number" id="inp-diagnosis-year"
+                                            class="w-24 bg-white border-blue-200 rounded-lg p-1.5 border text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 font-semibold text-center"
+                                            placeholder="AAAA">
+                                    </div>
+
+                                    <div class="h-8 w-px bg-blue-200"></div>
+
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-blue-600 uppercase">Ancienneté :</span>
+                                        <span id="calc-duration" class="text-lg font-bold text-blue-900">--</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <h4 class="text-lg font-semibold text-gray-700 mb-6 flex items-center gap-2">
                                 <i class="fas fa-heartbeat text-red-500"></i> Profil de Risque & Complications
                             </h4>
@@ -702,6 +719,248 @@
             </form>
         </div>
         </div>
+
+        <!-- VIEW: IDENTITY & RISKS -->
+        <div id="view-identity-protocols" class="view-section hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-8 border-b pb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Dossier Patient : Profil</h3>
+                    <!-- Save button removed as auto-save is active -->
+                </div>
+
+                <form id="form-identity" class="space-y-8">
+                    <input type="hidden" id="patient-id">
+
+                    <!-- SECTION 1: IDENTITY -->
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                        <h4 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-user-circle text-blue-500"></i> Informations Administratives
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Nom</label>
+                                <input type="text" id="inp-lastname"
+                                    class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Prénom</label>
+                                <input type="text" id="inp-firstname"
+                                    class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Date de
+                                    Naissance</label>
+                                <input type="date" id="inp-birthdate"
+                                    class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Sexe</label>
+                                <select id="inp-gender" class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                                    <option value="">Sélectionner...</option>
+                                    <option value="M">Homme</option>
+                                    <option value="F">Femme</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Médecin Traitant</label>
+                                <input type="text" id="inp-gp"
+                                    class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+                            </div>
+                            <!-- Age Input (Readonly) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Âge</label>
+                                <input type="text" id="inp-age" readonly
+                                    class="w-full bg-gray-100 border-gray-200 rounded-lg p-2.5 border text-gray-500 cursor-not-allowed font-medium text-center"
+                                    placeholder="--">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Protocol Card (New) -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mt-8">
+                        <h4 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-clipboard-list text-purple-500"></i> Protocoles & Missions
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                            id="protocol-grid">
+                            <!-- DT2 -->
+                            <label id="card-dt2"
+                                class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
+                                <input type="checkbox" id="proto-dt2" class="peer sr-only" data-protocol="dt2"
+                                    data-color="yellow">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-yellow-600 transition-colors">
+                                        <i class="fas fa-candy-cane text-xl"></i>
+                                    </div>
+                                    <span
+                                        class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Diabète
+                                        Type 2</span>
+                                </div>
+                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
+                                    <div class="relative">
+                                        <input type="date" id="date-dt2"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-yellow-600 peer font-medium"
+                                            placeholder=" " />
+                                        <label for="date-dt2"
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-yellow-700">Inclusion</label>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- RCVA -->
+                            <label id="card-rcva"
+                                class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
+                                <input type="checkbox" id="proto-rcva" class="peer sr-only" data-protocol="rcva"
+                                    data-color="red">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-red-600 transition-colors">
+                                        <i class="fas fa-heart-pulse text-xl"></i>
+                                    </div>
+                                    <span
+                                        class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Risque
+                                        CV Absolu</span>
+                                </div>
+                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
+                                    <div class="relative">
+                                        <input type="date" id="date-rcva"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-red-600 peer font-medium"
+                                            placeholder=" " />
+                                        <label for="date-rcva"
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-red-700">Inclusion</label>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Smoke -->
+                            <label id="card-smoke"
+                                class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
+                                <input type="checkbox" id="proto-smoke" class="peer sr-only" data-protocol="smoke"
+                                    data-color="blue">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-blue-600 transition-colors">
+                                        <i class="fas fa-smoking-ban text-xl"></i>
+                                    </div>
+                                    <span
+                                        class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Sevrage
+                                        Tabac</span>
+                                </div>
+                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
+                                    <div class="relative">
+                                        <input type="date" id="date-smoke"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer font-medium"
+                                            placeholder=" " />
+                                        <label for="date-smoke"
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-blue-700">Inclusion</label>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Asthme -->
+                            <label id="card-asthme"
+                                class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
+                                <input type="checkbox" id="proto-asthme" class="peer sr-only" data-protocol="asthme"
+                                    data-color="blue">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-blue-600 transition-colors">
+                                        <i class="fas fa-lungs text-xl"></i>
+                                    </div>
+                                    <span
+                                        class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Asthme</span>
+                                </div>
+                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
+                                    <div class="relative">
+                                        <input type="date" id="date-asthme"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer font-medium"
+                                            placeholder=" " />
+                                        <label for="date-asthme"
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-blue-700">Inclusion</label>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- BPCO -->
+                            <label id="card-bpco"
+                                class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
+                                <input type="checkbox" id="proto-bpco" class="peer sr-only" data-protocol="bpco"
+                                    data-color="blue">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-blue-600 transition-colors">
+                                        <i class="fas fa-lungs-virus text-xl"></i>
+                                    </div>
+                                    <span
+                                        class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">BPCO</span>
+                                </div>
+                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
+                                    <div class="relative">
+                                        <input type="date" id="date-bpco"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer font-medium"
+                                            placeholder=" " />
+                                        <label for="date-bpco"
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-blue-700">Inclusion</label>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Cognitive -->
+                            <label id="card-cog"
+                                class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
+                                <input type="checkbox" id="proto-cog" class="peer sr-only" data-protocol="cog"
+                                    data-color="green">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-green-600 transition-colors">
+                                        <i class="fas fa-brain text-xl"></i>
+                                    </div>
+                                    <span
+                                        class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Troubles
+                                        Cognitifs</span>
+                                </div>
+                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
+                                    <div class="relative">
+                                        <input type="date" id="date-cog"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-green-600 peer font-medium"
+                                            placeholder=" " />
+                                        <label for="date-cog"
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-green-700">Inclusion</label>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Prevention -->
+                            <label id="card-prev"
+                                class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
+                                <input type="checkbox" id="proto-prev" class="peer sr-only" data-protocol="prev"
+                                    data-color="purple">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-purple-600 transition-colors">
+                                        <i class="fas fa-shield-virus text-xl"></i>
+                                    </div>
+                                    <span
+                                        class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Prévention
+                                        Syst.</span>
+                                </div>
+                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
+                                    <div class="relative">
+                                        <input type="date" id="date-prev"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-purple-600 peer font-medium"
+                                            placeholder=" " />
+                                        <label for="date-prev"
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-purple-700">Inclusion</label>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                </form>
+            </div>
+        </div>
+        </div> <!-- Added missing closing tag for view-identity-protocols -->
+
         <div id="view-followup" class="view-section hidden">
             <div class="max-w-7xl mx-auto space-y-6">
                 <!-- Quick Dial Module -->
@@ -1528,8 +1787,151 @@
                         Ce graphique projette les dernières données connues par rapport aux objectifs cibles.
                     </div>
                 </div> <!-- Close Chart Container -->
+                <!-- 3. Summary & Export -->
+                <div class="mt-8 pt-8 border-t border-gray-100">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-file-medical-alt text-blue-600"></i> Courriers et résumés
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Controls -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Modèle</label>
+                                <select id="summary-template-select"
+                                    class="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-100">
+                                    <option value="" disabled selected>Chargement des modèles...</option>
+                                </select>
+                            </div>
+                            <button id="btn-generate-summary"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+                                <i class="fas fa-magic"></i> Générer
+                            </button>
+
+                            <hr class="border-gray-100">
+
+                            <div class="flex flex-col gap-2">
+                                <button id="btn-copy-summary"
+                                    class="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                                    <i class="fas fa-copy"></i> Copier
+                                </button>
+                                <button id="btn-export-pdf"
+                                    class="w-full bg-white border border-gray-200 hover:bg-gray-50 text-red-600 font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                                    <i class="fas fa-file-pdf"></i> Exporter en PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Editor -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Aperçu et Édition</label>
+                            <textarea id="summary-editor"
+                                class="w-full h-96 p-4 text-sm font-mono border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none leading-relaxed"
+                                spellcheck="false" placeholder="Le résumé généré apparaîtra ici..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
             </div> <!-- Close Card -->
         </div> <!-- Close view-synthesis -->
+
+        <!-- VIEW: LETTERS (Courriers) -->
+        <div id="view-letters" class="view-section hidden h-full flex flex-col">
+            <div class="flex flex-1 gap-6 p-6 h-full overflow-hidden">
+                <!-- LEFT: Templates -->
+                <div
+                    class="w-1/4 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50">
+                        <h3 class="font-bold text-gray-700 text-sm uppercase">Modèles</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                        <!-- System Templates -->
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Système</h4>
+                            <div id="list-templates-system" class="space-y-1">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        <!-- Perso Templates -->
+                        <div>
+                            <h4
+                                class="text-xs font-bold text-gray-500 uppercase mb-2 flex justify-between items-center">
+                                Personnels
+                                <button id="btn-create-perso-template"
+                                    class="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors"
+                                    title="Créer un nouveau modèle vide">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </h4>
+                            <div id="list-templates-perso" class="space-y-1">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CENTER: Editor -->
+                <div
+                    class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center flex-none">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <span id="editor-template-badge"
+                                class="hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex-none"></span>
+                            <h3 id="editor-template-title" class="font-bold text-gray-800 truncate">Nouveau Courrier
+                            </h3>
+                        </div>
+                        <div class="flex gap-2 flex-none">
+                            <!-- Actions (Visible based on context) -->
+                            <button id="btn-copy-system-template"
+                                class="hidden bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded text-xs font-medium transition-colors items-center gap-1">
+                                <i class="fas fa-copy"></i> Copier vers Mes Modèles
+                            </button>
+                            <button id="btn-save-perso-template"
+                                class="hidden bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded text-xs font-medium transition-colors items-center gap-1">
+                                <i class="fas fa-save"></i> Enregistrer
+                            </button>
+                            <button id="btn-delete-perso-template"
+                                class="hidden bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded text-xs font-medium transition-colors items-center gap-1">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <div class="w-px h-6 bg-gray-300 mx-1"></div>
+                            <button id="btn-print-letter"
+                                class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1.5 rounded text-xs font-medium transition-colors items-center gap-1 flex">
+                                <i class="fas fa-print"></i> Imprimer
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 relative flex flex-col p-8 overflow-y-auto custom-scrollbar bg-white">
+                        <!-- Simulated A4 or just text area -->
+                        <textarea id="letter-editor-content"
+                            class="flex-1 w-full h-full resize-none focus:outline-none focus:ring-0 font-serif text-gray-800 leading-relaxed text-base placeholder-gray-300"
+                            placeholder="Sélectionnez un modèle ou commencez à écrire..."></textarea>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Macros -->
+                <div
+                    class="w-1/5 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50 space-y-2">
+                        <h3 class="font-bold text-gray-700 text-sm uppercase">Macros</h3>
+                        <div class="relative">
+                            <i
+                                class="fas fa-search absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                            <input type="text" id="macro-search-input" placeholder="Rechercher..."
+                                class="w-full pl-7 pr-2 py-1 text-xs border border-gray-200 rounded focus:border-blue-400 outline-none transition-colors">
+                        </div>
+                        <select id="macro-category-filter-letter"
+                            class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-400 text-gray-600">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <div id="letters-macro-list" class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- VIEW: ETP LIBRARY (Back-office) -->
         <div id="view-etp-library" class="view-section hidden p-8">
             <div class="max-w-7xl mx-auto space-y-6">
@@ -1646,6 +2048,102 @@
             </div>
         </div>
 
+        <!-- VIEW: TEMPLATES MANAGER (New) -->
+        <div id="view-templates" class="view-section hidden p-8 h-full flex flex-col">
+            <div class="max-w-7xl mx-auto w-full h-full flex flex-col gap-6">
+                <!-- Header -->
+                <div
+                    class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-none">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Gestion des Modèles</h2>
+                        <p class="text-gray-500 text-sm">Créez et modifiez vos modèles de courriers et comptes-rendus.
+                        </p>
+                    </div>
+                    <button
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
+                        id="btn-new-template">
+                        <i class="fas fa-plus"></i> Nouveau Modèle
+                    </button>
+                </div>
+
+                <div class="flex-1 flex gap-6 overflow-hidden">
+                    <!-- Left: List -->
+                    <div
+                        class="w-1/4 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                        <div class="p-4 border-b border-gray-100 bg-gray-50">
+                            <h3 class="font-bold text-gray-700 text-sm uppercase">Vos Modèles</h3>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-2 space-y-2" id="template-list-container">
+                            <!-- Populated by JS -->
+                            <div class="text-center text-gray-400 text-sm py-8">Chargement...</div>
+                        </div>
+                    </div>
+
+                    <!-- Center: Editor -->
+                    <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden hidden"
+                        id="template-editor-panel">
+                        <div class="p-4 border-b border-gray-100 flex gap-4 items-center bg-gray-50">
+                            <input type="text" id="inp-tpl-name"
+                                class="flex-1 bg-white border border-gray-200 rounded px-3 py-1.5 focus:ring-2 focus:ring-blue-100 outline-none font-semibold text-gray-800"
+                                placeholder="Nom du modèle">
+                            <select id="inp-tpl-category"
+                                class="bg-white border border-gray-200 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-100 outline-none text-gray-600">
+                                <option value="courrier">Courrier</option>
+                                <option value="synthese">Synthèse</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                            <div class="flex gap-2">
+                                <button id="btn-save-template"
+                                    class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm transition-colors flex items-center gap-2"
+                                    title="Enregistrer">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                                <button id="btn-edit-template"
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded text-sm transition-colors flex items-center gap-2"
+                                    title="Modifier / Débloquer">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button id="btn-delete-template"
+                                    class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded text-sm transition-colors flex items-center gap-2"
+                                    title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-4 flex flex-col">
+                            <textarea id="inp-tpl-content"
+                                class="flex-1 w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none font-mono text-sm leading-relaxed"
+                                placeholder="Contenu du modèle... Utilisez les macros à droite."></textarea>
+                        </div>
+                        <div class="p-2 bg-gray-50 border-t border-gray-100 text-xs text-gray-500 text-center">
+                            Modifications non enregistrées
+                        </div>
+                    </div>
+                    <!-- Empty State for Editor -->
+                    <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center text-gray-400 flex-col gap-2"
+                        id="template-editor-empty">
+                        <i class="fas fa-file-signature text-4xl mb-2 text-gray-200"></i>
+                        <p>Sélectionnez un modèle pour l'éditer</p>
+                    </div>
+
+                    <!-- Right: Macros -->
+                    <div
+                        class="w-1/4 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                        <div class="p-4 border-b border-gray-100 bg-gray-50 flex flex-col gap-2">
+                            <h3 class="font-bold text-gray-700 text-sm uppercase">Macros Disponibles</h3>
+                            <select id="macro-category-filter"
+                                class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-400 text-gray-600">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-4 space-y-6" id="macro-list-container">
+                            <!-- Populated by JS -->
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div> <!-- Close content-area -->
 
     </main>
@@ -1809,9 +2307,194 @@
     <div id="notification-container"></div>
 
     <script src="calculations.js"></script>
+    <!-- MODALS: SYNTHESIS INFO -->
+
+    <!-- Modal HbA1c -->
+    <div id="modal-info-hba1c"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                    <span class="text-2xl">🩸</span>
+                </div>
+                <h3 class="text-lg leading-6 font-bold text-gray-900 mt-2 mb-4">Cible d'HbA1c</h3>
+                <div class="mt-2 text-left text-sm text-gray-600 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <p class="italic">La cible d'HbA1c est individualisée en fonction du profil du patient :</p>
+
+                    <div>
+                        <h4 class="font-bold text-blue-600">Pour la plupart des patients : Cible < 7 %</h4>
+                                <ul class="list-disc pl-5 mt-1 space-y-1">
+                                    <li><strong>
+                                            < 6,5 %</strong> : Diabète nouvellement diagnostiqué (espérance de vie > 15
+                                                ans, sans antécédent CV, monothérapie).</li>
+                                </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-blue-600">Cas général (Cible < 8 %)</h4>
+                                <ul class="list-disc pl-5 mt-1 space-y-1">
+                                    <li>DT2 avec comorbidité grave avérée et/ou espérance de vie limitée (< 5 ans).</li>
+                                    <li>DT2 avec complications macrovasculaires évoluées.</li>
+                                    <li>DT2 > 10 ans d'évolution avec risque hypoglycémique sévère si intensification.
+                                    </li>
+                                </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-blue-600">Personnes âgées (> 75 ans)</h4>
+                        <ul class="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong>"Vigoureuses"</strong> (espérance de vie satisfaisante) : Cible < 7 %.</li>
+                            <li><strong>"Fragiles"</strong> (état intermédiaire) : Cible < 8 %.</li>
+                            <li><strong>"Malades"</strong> (dépendantes, polypathologie) : Cible < 9 % (et/ou glycémies
+                                    pré-prandiales 1-2 g/L).</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-blue-600">Insuffisance Rénale Chronique (IRC)</h4>
+                        <ul class="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong>Stades 3A/3B</strong> (Modérée) : Cible < 7 %.</li>
+                            <li><strong>Stades 4/5</strong> (Sévère/Terminale) : Cible < 8 %.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-blue-600">Grossesse</h4>
+                        <ul class="list-disc pl-5 mt-1 space-y-1">
+                            <li>Avant / Durant : Cible < 6,5 %.</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-xs text-gray-400 mt-4 border-t pt-2">Référence : HAS - Stratégie thérapeutique du
+                        patient vivant avec un diabète de type 2, mai 2024.</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button
+                        class="modal-close-btn px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tension -->
+    <div id="modal-info-ta" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <span class="text-2xl">💓</span>
+                </div>
+                <h3 class="text-lg leading-6 font-bold text-gray-900 mt-2 mb-4">Cible de Tension Artérielle</h3>
+                <div class="mt-2 text-left text-sm text-gray-600 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <p class="italic">La cible tensionnelle doit être individualisée :</p>
+
+                    <div>
+                        <h4 class="font-bold text-red-600">Adultes < 65 ans</h4>
+                                <p class="text-xs mb-1">Traitement si PA ≥ 140/90 mmHg</p>
+                                <ul class="list-disc pl-5 mt-1 space-y-1">
+                                    <li><strong>Objectif : < 130/80 mmHg</strong> (et > 120/70 mmHg).</li>
+                                </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-red-600">65 à 80 ans (sans fragilités)</h4>
+                        <p class="text-xs mb-1">Traitement si PA ≥ 140/90 mmHg</p>
+                        <ul class="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong>Objectif : < 140/90 mmHg</strong> (et > 130/80 mmHg).</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-red-600">≥ 80 ans (sans fragilité)</h4>
+                        <p class="text-xs mb-1">Traitement si PA ≥ 160/90 mmHg</p>
+                        <ul class="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong>Objectif : < 150/90 mmHg</strong> (sans hypotension orthostatique).</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-red-600">Avec fragilité (tout âge)</h4>
+                        <p class="text-xs mb-1">Traitement si PA ≥ 160/90 mmHg</p>
+                        <ul class="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong>Objectif : < 150/90 mmHg</strong> (sans hypotension orthostatique).</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-xs text-gray-400 mt-4 border-t pt-2">Référence : 2023 ESC Guidelines for the
+                        management of cardiovascular disease in patients with diabetes.</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button
+                        class="modal-close-btn px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal LDL -->
+    <div id="modal-info-ldl" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                    <span class="text-2xl">📊</span>
+                </div>
+                <h3 class="text-lg leading-6 font-bold text-gray-900 mt-2 mb-4">Cible de LDL Cholestérol</h3>
+                <div class="mt-2 text-left text-sm text-gray-600 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <p class="italic">Le choix de la cible dépend du niveau de risque cardiovasculaire :</p>
+
+                    <div class="bg-yellow-50 p-2 rounded border border-yellow-100">
+                        <h4 class="font-bold text-yellow-700 mb-1">Prévention Secondaire / AOC Sévère</h4>
+                        <ul class="list-none space-y-1">
+                            <li class="font-bold text-lg text-center text-yellow-800">Objectif : < 0.55 g/L</li>
+                        </ul>
+                        <p class="text-xs mt-1 text-yellow-600">Note : AOC sévère inclut DFG < 45, ou Microalbuminurie +
+                                DFG 45-59, ou Macroalbuminurie.</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-gray-700">Prévention Primaire (selon SCORE2-Diabète)</h4>
+                        <table class="w-full text-xs mt-2 border-collapse">
+                            <tr class="border-b">
+                                <td class="py-1 pr-2 font-semibold">Risque FAIBLE (< 5%)</td>
+                                <td class="py-1 text-right font-bold text-green-600">
+                                    < 1.6 g/L</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-1 pr-2 font-semibold">Risque MODÉRÉ (5-10%)</td>
+                                <td class="py-1 text-right font-bold text-yellow-600">
+                                    < 1.0 g/L</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-1 pr-2 font-semibold">Risque ÉLEVÉ (10-20%)</td>
+                                <td class="py-1 text-right font-bold text-orange-600">
+                                    < 0.70 g/L</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 pr-2 font-semibold">Risque TRÈS ÉLEVÉ (> 20%)</td>
+                                <td class="py-1 text-right font-bold text-red-600">
+                                    < 0.55 g/L</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button
+                        class="modal-close-btn px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="data/medications.js"></script>
     <script src="pharma_book.js"></script>
     <script src="data/education_topics.js"></script>
+    <script src="calculations.js"></script>
+    <script src="summary_engine.js"></script>
     <script src="renderer.js"></script>
 </body>
 

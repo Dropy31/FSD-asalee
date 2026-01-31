@@ -1,6 +1,10 @@
 /* Custom Styles for Diabetes Desktop App */
 
 /* --- Floating Label Inputs --- */
+.hidden {
+    display: none !important;
+}
+
 .input-group-title {
     font-size: 0.875rem;
     /* text-sm */
@@ -230,8 +234,20 @@
 }
 
 /* --- View Transitions --- */
+/* --- View Transitions --- */
 .view-section {
-    animation: fadeIn 0.3s ease-out;
+    display: none !important;
+    width: 100%;
+    animation: none;
+}
+
+.view-section.active-view {
+    display: block !important;
+    /* animation: fadeIn 0.3s ease-out; REMOVED to fix opacity 0 bug */
+    animation: none !important;
+    opacity: 1 !important;
+    height: 100% !important;
+    width: 100% !important;
 }
 
 @keyframes fadeIn {
@@ -453,4 +469,59 @@
 .nav-btn.active i {
     color: #60a5fa !important;
     /* blue-400 */
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #print-container,
+    #print-container * {
+        visibility: visible;
+    }
+
+    #print-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 2cm;
+        background: white;
+        z-index: 9999;
+    }
+
+    .print-content .header {
+        border-bottom: 2px solid #3b82f6;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .print-content .header h1 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #111827;
+        margin: 0;
+    }
+
+    .print-content .body {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 12pt;
+        line-height: 1.6;
+        color: #000;
+        white-space: pre-wrap;
+    }
+
+    .print-content .footer {
+        margin-top: 3rem;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 1rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: #9ca3af;
+    }
 }

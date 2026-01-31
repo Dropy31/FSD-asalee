@@ -20,7 +20,7 @@ function createLoginWindow() {
     });
 
     loginWindow.loadFile(path.join(__dirname, '../renderer/login.html'));
-    loginWindow.webContents.openDevTools();
+
 
     loginWindow.on('closed', () => {
         loginWindow = null;
@@ -178,4 +178,38 @@ ipcMain.handle('db:update-medication', (event, id, data) => {
 
 ipcMain.handle('db:delete-medication', (event, id) => {
     return db.deleteMedication(id);
+});
+
+// Templates IPC Handlers
+ipcMain.handle('db:get-templates', () => {
+    return db.getAllTemplates();
+});
+
+ipcMain.handle('db:create-template', (event, data) => {
+    return db.createTemplate(data);
+});
+
+ipcMain.handle('db:update-template', (event, id, data) => {
+    return db.updateTemplate(id, data);
+});
+
+ipcMain.handle('db:delete-template', (event, id) => {
+    return db.deleteTemplate(id);
+});
+
+// Macros IPC Handlers
+ipcMain.handle('db:get-macros', () => {
+    return db.getAllMacros();
+});
+
+ipcMain.handle('db:create-macro', (event, data) => {
+    return db.createMacro(data);
+});
+
+ipcMain.handle('db:update-macro', (event, id, data) => {
+    return db.updateMacro(id, data);
+});
+
+ipcMain.handle('db:delete-macro', (event, id) => {
+    return db.deleteMacro(id);
 });

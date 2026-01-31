@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Overrides from original styles.css will be preserved if we append them or manage them separately.
+   For now, we build the UTILITIES here. 
+   Wait, the user has a custom styles.css with A LOT of custom CSS (500+ lines).
+   I should NOT overwrite styles.css directly with the tailwind output unless I include the custom styles in the input.
+   
+   Better strategy:
+   1. Build tailwind to `src/renderer/tailwind_build.css`
+   2. Link BOTH `tailwind_build.css` and `styles.css` in index.html (Tailwind first).
+   OR
+   3. Append the content of styles.css to this input file? No, styles.css is already linked.
+   
+   Safe bet: Generate `tailwind_build.css` and link it BEFORE `styles.css`.
+*/

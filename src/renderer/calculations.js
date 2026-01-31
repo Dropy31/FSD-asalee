@@ -92,11 +92,24 @@
         return parseFloat(calibratedRisk.toFixed(1));
     }
 
+    function calculateAge(birthDate) {
+        if (!birthDate) return null;
+        const today = new Date();
+        const birth = new Date(birthDate);
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return age;
+    }
+
     // Export logic
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { calculateScore2Diabetes };
+        module.exports = { calculateScore2Diabetes, calculateAge };
     } else {
         root.calculateScore2Diabetes = calculateScore2Diabetes;
+        root.calculateAge = calculateAge;
     }
 
 })(typeof window !== 'undefined' ? window : this);
