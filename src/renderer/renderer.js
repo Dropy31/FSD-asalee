@@ -209,17 +209,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Populate Protocols
                 const protocols = patient.protocols || {};
                 ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
+                    const cb = document.getElementById(`proto-${p}`);
                     setSafeChecked(`proto-${p}`, !!protocols[p]);
 
                     const dateInp = document.getElementById(`date-${p}`);
                     if (dateInp) {
                         dateInp.value = protocols[p] || '';
-                        // We rely on CSS peer-checked for visibility now, 
-                        // but we just set the value.
                     }
-                    // Trigger Visual Update
-                    if (window.updateProtocolCardVisuals) {
-                        window.updateProtocolCardVisuals(p);
+
+                    // Trigger Visual Update (Ensure we use our new function)
+                    if (cb && typeof updateCardVisual === 'function') {
+                        updateCardVisual(cb);
                     }
                 });
                 updateSidebarVisibility(protocols);
@@ -392,7 +392,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Profile form reset");
             }
 
-            // EXPLICITLY UNCHECK PROTOCOLS (Safety Net)
+            // Reset Protocol Cards Visually
+            resetProtocolCards();
+
+            // EXPLICITLY UNCHECK PROTOCOLS (Safety Net - still good to keep synced)
             ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
                 const cb = document.getElementById(`proto-${p}`);
                 const dateInp = document.getElementById(`date-${p}`);
@@ -1394,6 +1397,99 @@ function calculateSCORE2Diabetes() {
         scoreInput.value = '';
     }
 }
+
+
+// --- 4. PROTOCOL CARD LOGIC ---
+
+// Helper to reset visual state (Ghosting Fix)
+function resetProtocolCards() {
+    const cards = document.querySelectorAll('.protocol-card');
+    cards.forEach(card => {
+        // Remove all active classes
+        card.classList.remove('bg-green-100', 'bg-red-100', 'bg-blue-100', 'bg-yellow-100', 'bg-purple-100');
+        card.classList.remove('border-green-300', 'border-red-300', 'border-blue-300', 'border-yellow-300', 'border-purple-300');
+        card.classList.remove('ring-2', 'ring-green-500', 'ring-red-500', 'ring-blue-500', 'ring-yellow-500', 'ring-purple-500');
+
+        // Reset to default
+        card.classList.add('bg-gray-50', 'border-gray-200');
+    });
+}
+
+// Delegated Listener for Validation and Visuals
+const protocolGrid = document.getElementById('protocol-grid');
+if (protocolGrid) {
+    protocolGrid.addEventListener('click', (e) => {
+        // Find the card being clicked
+        const card = e.target.closest('.protocol-card');
+        if (!card) return;
+
+        // --- VALIDATION GUARD ---
+        const lastName = document.getElementById('inp-lastname').value.trim();
+        const firstName = document.getElementById('inp-firstname').value.trim();
+        const birthDate = document.getElementById('inp-birthdate').value;
+        const gender = document.getElementById('inp-gender').value;
+
+        if (!lastName || !firstName || !birthDate || !gender) {
+            e.preventDefault(); // Stop the checkbox toggle
+            e.stopPropagation();
+
+            // Visual Feedback (Shake or Alert)
+            alert("Veuillez renseigner l'Identité du patient (Nom, Prénom, Date de Naissance, Sexe) avant de sélectionner un protocole.");
+
+            // Highlight missing fields
+            if (!lastName) highlightError('inp-lastname');
+            if (!firstName) highlightError('inp-firstname');
+            if (!birthDate) highlightError('inp-birthdate');
+            if (!gender) highlightError('inp-gender');
+
+            return;
+        }
+
+        // Note: The actual visual toggling (bg colors) works via CSS peer-checked or separate JS?
+        // If it was JS, we'd see it. Looking at index.html, it seems purely detailed JS logic was missing or implied?
+        // Actually, looking at index.html, classes like `peer-checked:block` handle the date input input visibility.
+        // But the BACKGROUND color of the card is likely handled by a change listener I missed or need to add.
+        // Let's ADD a visual updater here to be sure.
+
+        // The click event happens before the change? or triggers it.
+        // We can listen to 'change' on the grid for robust visual updates.
+    });
+
+    // Separate Change Listener for Visuals (Color Toggling)
+    protocolGrid.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox' && e.target.dataset.protocol) {
+            updateCardVisual(e.target);
+        }
+    });
+}
+
+function updateCardVisual(checkbox) {
+    const card = checkbox.closest('.protocol-card');
+    const color = checkbox.dataset.color || 'blue'; // default
+
+    // Map simple color names to Tailwind classes
+    const colorMap = {
+        'green': { bg: 'bg-green-100', border: 'border-green-300', ring: 'ring-green-500' },
+        'red': { bg: 'bg-red-100', border: 'border-red-300', ring: 'ring-red-500' },
+        'blue': { bg: 'bg-blue-100', border: 'border-blue-300', ring: 'ring-blue-500' },
+        'yellow': { bg: 'bg-yellow-100', border: 'border-yellow-300', ring: 'ring-yellow-500' },
+        'purple': { bg: 'bg-purple-100', border: 'border-purple-300', ring: 'ring-purple-500' },
+    };
+
+    const classes = colorMap[color];
+
+    if (checkbox.checked) {
+        card.classList.remove('bg-gray-50', 'border-gray-200');
+        card.classList.add(classes.bg, classes.border, 'ring-2', classes.ring);
+    } else {
+        // Reset specific active classes first
+        card.classList.remove(classes.bg, classes.border, 'ring-2', classes.ring);
+        // Add default
+        card.classList.add('bg-gray-50', 'border-gray-200');
+    }
+}
+// Ensure Visuals are updated on load (populating from DB) - Call this after loading patient
+
 
 // --- HISTORY TABLE & CHART ---
 function renderHistoryTable_UNUSED(data) {
