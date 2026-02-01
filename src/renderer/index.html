@@ -222,15 +222,16 @@
                 <!-- Recent Patients -->
                 <div class="mb-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">Derniers Patients Consultés</h3>
-                    <table class="w-full text-left text-sm text-gray-600">
+                    <table class="w-full text-left text-sm text-gray-600 table-fixed">
                         <thead class="bg-gray-50 text-xs uppercase font-semibold text-gray-500">
                             <tr>
-                                <th class="px-4 py-3">Nom</th>
-                                <th class="px-4 py-3">Prénom</th>
-                                <th class="px-4 py-3">Âge</th>
-                                <th class="px-4 py-3">Médecin</th>
-                                <th class="px-4 py-3">Dernière Consultation</th>
-                                <th class="px-4 py-3 text-right">Actions</th>
+                                <th class="px-4 py-3 w-[20%]">Nom</th>
+                                <th class="px-4 py-3 w-[20%]">Prénom</th>
+                                <th class="px-4 py-3 w-16">Âge</th>
+                                <th class="px-4 py-3 w-[15%]">Médecin</th>
+                                <th class="px-4 py-3 w-[15%]">Protocoles</th>
+                                <th class="px-4 py-3 w-[15%]">Dernière Consultation</th>
+                                <th class="px-4 py-3 text-right w-24">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="table-recent-patients" class="divide-y divide-gray-100">
@@ -243,18 +244,19 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">Tous les Patients</h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-600">
+                        <table class="w-full text-left text-sm text-gray-600 table-fixed">
                             <thead class="bg-gray-50 text-xs uppercase font-semibold text-gray-500">
                                 <tr>
-                                    <th class="px-4 py-3 cursor-pointer hover:text-blue-600 transition-colors"
+                                    <th class="px-4 py-3 cursor-pointer hover:text-blue-600 transition-colors w-[20%]"
                                         id="sort-name">
                                         Nom <i class="fas fa-sort ml-1"></i>
                                     </th>
-                                    <th class="px-4 py-3">Prénom</th>
-                                    <th class="px-4 py-3">Âge</th>
-                                    <th class="px-4 py-3">Médecin</th>
-                                    <th class="px-4 py-3">Dernière Consultation</th>
-                                    <th class="px-4 py-3 text-right">Actions</th>
+                                    <th class="px-4 py-3 w-[20%]">Prénom</th>
+                                    <th class="px-4 py-3 w-16">Âge</th>
+                                    <th class="px-4 py-3 w-[15%]">Médecin</th>
+                                    <th class="px-4 py-3 w-[15%]">Protocoles</th>
+                                    <th class="px-4 py-3 w-[15%]">Dernière Consultation</th>
+                                    <th class="px-4 py-3 text-right w-24">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="table-all-patients" class="divide-y divide-gray-100">
@@ -723,9 +725,8 @@
         <!-- VIEW: IDENTITY & RISKS -->
         <div id="view-identity-protocols" class="view-section hidden">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-7xl mx-auto">
-                <div class="flex justify-between items-center mb-8 border-b pb-4">
-                    <h3 class="text-xl font-bold text-gray-800">Dossier Patient : Profil</h3>
-                    <!-- Save button removed as auto-save is active -->
+                <div class="flex justify-between items-center mb-8 border-b pb-4 hidden">
+                    <!-- Header Removed as requested -->
                 </div>
 
                 <form id="form-identity" class="space-y-8">
@@ -736,24 +737,30 @@
                         <h4 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
                             <i class="fas fa-user-circle text-blue-500"></i> Informations Administratives
                         </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div>
+                        <div class="grid grid-cols-12 gap-4">
+                            <!-- ROW 1: Nom (3), Prénom (3), Birthdate (2), Age (2), Sex (2) -->
+                            <div class="col-span-3">
                                 <label class="block text-sm font-medium text-gray-600 mb-1">Nom</label>
-                                <input type="text" id="inp-lastname"
+                                <input type="text" id="inp-lastname" placeholder="ex: DUPONT"
                                     class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
                             </div>
-                            <div>
+                            <div class="col-span-3">
                                 <label class="block text-sm font-medium text-gray-600 mb-1">Prénom</label>
-                                <input type="text" id="inp-firstname"
+                                <input type="text" id="inp-firstname" placeholder="ex: Jean"
                                     class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-600 mb-1">Date de
-                                    Naissance</label>
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Date de Naissance</label>
                                 <input type="date" id="inp-birthdate"
                                     class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
                             </div>
-                            <div>
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Âge</label>
+                                <input type="text" id="inp-age" readonly
+                                    class="w-full bg-gray-100 border-gray-200 rounded-lg p-2.5 border text-gray-500 cursor-not-allowed font-medium text-center"
+                                    placeholder="--">
+                            </div>
+                            <div class="col-span-2">
                                 <label class="block text-sm font-medium text-gray-600 mb-1">Sexe</label>
                                 <select id="inp-gender" class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
                                     <option value="">Sélectionner...</option>
@@ -761,17 +768,97 @@
                                     <option value="F">Femme</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-600 mb-1">Médecin Traitant</label>
-                                <input type="text" id="inp-gp"
-                                    class="w-full bg-white border-gray-200 rounded-lg p-2.5 border">
+
+                            <!-- ROW 2: INS (3), IDSP (3), GP (3), Bureau (3) -->
+                            <div class="col-span-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">N° Sécu (INS)</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-id-card text-xs"></i>
+                                    </div>
+                                    <input type="text" id="inp-ins" placeholder="1 23 45 67 890 123 45"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 pl-10 border">
+                                </div>
                             </div>
-                            <!-- Age Input (Readonly) -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-600 mb-1">Âge</label>
-                                <input type="text" id="inp-age" readonly
-                                    class="w-full bg-gray-100 border-gray-200 rounded-lg p-2.5 border text-gray-500 cursor-not-allowed font-medium text-center"
-                                    placeholder="--">
+
+                            <div class="col-span-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">IDSP référente</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-user-nurse text-sm"></i>
+                                    </div>
+                                    <select id="inp-idsp"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 pl-10 border appearance-none">
+                                        <option value="">Sélectionner...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-span-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Médecin Traitant</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-user-md text-sm"></i>
+                                    </div>
+                                    <select id="inp-gp"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 pl-10 border appearance-none">
+                                        <option value="">Sélectionner...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-span-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Bureau</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-building text-sm"></i>
+                                    </div>
+                                    <select id="inp-office"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 pl-10 border appearance-none">
+                                        <option value="">Sélectionner...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- ROW 3: Phone (3), Emergency (3), Email (6) -->
+                            <div class="col-span-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Téléphone</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-phone-alt text-sm"></i>
+                                    </div>
+                                    <input type="tel" id="inp-phone" placeholder="06 12 34 56 78"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 pl-10 border">
+                                </div>
+                            </div>
+
+                            <div class="col-span-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Personne à prévenir</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-user-shield text-sm"></i>
+                                    </div>
+                                    <input type="text" id="inp-emergency" placeholder="Nom & Tél"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 pl-10 border">
+                                </div>
+                            </div>
+
+                            <div class="col-span-6" style="grid-column: span 6;">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Adresse mail</label>
+                                <div class="relative w-full">
+                                    <div
+                                        class="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-envelope text-sm"></i>
+                                    </div>
+                                    <input type="email" id="inp-email" placeholder="patient@example.com"
+                                        class="w-full bg-white border-gray-200 rounded-lg p-2.5 pl-10 border">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -787,10 +874,10 @@
                             <label id="card-dt2"
                                 class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
                                 <input type="checkbox" id="proto-dt2" class="peer sr-only" data-protocol="dt2"
-                                    data-color="yellow">
+                                    data-color="green">
                                 <div class="flex items-center gap-3">
                                     <div
-                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-yellow-600 transition-colors">
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-green-600 transition-colors">
                                         <i class="fas fa-candy-cane text-xl"></i>
                                     </div>
                                     <span
@@ -800,10 +887,10 @@
                                 <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
                                     <div class="relative">
                                         <input type="date" id="date-dt2"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-yellow-600 peer font-medium"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-green-600 peer font-medium"
                                             placeholder=" " />
                                         <label for="date-dt2"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-yellow-700">Inclusion</label>
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-green-700">Inclusion</label>
                                     </div>
                                 </div>
                             </label>
@@ -910,10 +997,10 @@
                             <label id="card-cog"
                                 class="protocol-card relative flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer bg-gray-50 border-gray-200 hover:border-blue-300 group min-h-[140px] justify-between">
                                 <input type="checkbox" id="proto-cog" class="peer sr-only" data-protocol="cog"
-                                    data-color="green">
+                                    data-color="yellow">
                                 <div class="flex items-center gap-3">
                                     <div
-                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-green-600 transition-colors">
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-yellow-600 transition-colors">
                                         <i class="fas fa-brain text-xl"></i>
                                     </div>
                                     <span
@@ -923,10 +1010,10 @@
                                 <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
                                     <div class="relative">
                                         <input type="date" id="date-cog"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-green-600 peer font-medium"
+                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-yellow-600 peer font-medium"
                                             placeholder=" " />
                                         <label for="date-cog"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-green-700">Inclusion</label>
+                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-yellow-700">Inclusion</label>
                                     </div>
                                 </div>
                             </label>

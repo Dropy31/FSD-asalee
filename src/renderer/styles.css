@@ -445,13 +445,17 @@
 /* Assuming tables have IDs table-etp-library and table-pharma-book */
 
 #table-etp-library tr button,
-#table-pharma-book tr button {
+#table-pharma-book tr button,
+#table-recent-patients tr button,
+#table-all-patients tr button {
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
 }
 
 #table-etp-library tr:hover button,
-#table-pharma-book tr:hover button {
+#table-pharma-book tr:hover button,
+#table-recent-patients tr:hover button,
+#table-all-patients tr:hover button {
     opacity: 1;
 }
 

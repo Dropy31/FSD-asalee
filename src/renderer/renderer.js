@@ -4,6 +4,7 @@ console.log('--- RENDERER.JS LOADED ---');
 import { debounce } from './modules/utils.js';
 import { initNavigation, updateNavigationState, viewTitles } from './modules/navigation.js';
 import { patientManager } from './modules/patient-manager.js';
+import { dashboard } from './modules/dashboard.js';
 
 // --- UI HELPER FUNCTIONS (GLOBAL) ---
 function showNotification(message, type = 'success') {
@@ -136,8 +137,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Safe Setters Helpers
                 const setSafeValue = (id, val) => {
                     const el = document.getElementById(id);
-                    if (el) el.value = val;
-                    else console.warn(`Element not found: ${id}`);
+                    if (el) {
+                        // For Select elements (IDSP, GP, Bureau), if value doesn't exist in options, add it
+                        if (el.tagName === 'SELECT' && val && !Array.from(el.options).some(opt => opt.value === val)) {
+                            if (id === 'inp-gp' || id === 'inp-idsp' || id === 'inp-office') {
+                                const opt = document.createElement('option');
+                                opt.value = val;
+                                opt.text = val;
+                                el.add(opt);
+                            }
+                        }
+                        el.value = val;
+                    } else {
+                        console.warn(`Element not found: ${id}`);
+                    }
                 };
                 const setSafeChecked = (id, checked) => {
                     const el = document.getElementById(id);
@@ -152,6 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 setSafeValue('inp-gender', patient.gender || '');
                 setSafeValue('inp-diagnosis-year', patient.diagnosisYear || '');
                 setSafeValue('inp-gp', patient.gp || '');
+                setSafeValue('inp-office', patient.office || ''); // New Field
+                setSafeValue('inp-idsp', patient.idsp || ''); // New Field
+                setSafeValue('inp-phone', patient.phone || '');
+                setSafeValue('inp-email', patient.email || '');
+                setSafeValue('inp-emergency', patient.emergencyContact || ''); // New Field
+                setSafeValue('inp-ins', patient.ins || '');
+                setSafeValue('inp-diagnosis-year', patient.diagnosisYear || '');
 
                 // Trigger Calculations
                 updateAge(patient.birthDate);
@@ -317,214 +337,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelector('[data-target="dashboard"]').click();
 
-    // --- Data Loading Logic ---
-    let allPatients = []; // Store all patients for client-side filtering
+    // --- Data Loading & Dashboard Logic ---
+    // Delegated to dashboard module
+    dashboard.init(openPatientHandler, closePatientHandler);
 
-    const loadDashboardData = async () => {
-        try {
-            console.log('--- loadDashboardData START ---');
-            const patients = await window.electronAPI.getPatients();
-            console.log('Patients retrieved:', patients ? patients.length : 'null');
-            allPatients = patients || []; // Update local cache
-            updateRecentPatientsTable(allPatients);
-            updateAllPatientsTable(allPatients); // Initial render of full list
-            console.log('--- loadDashboardData END ---');
-        } catch (error) {
-            console.error('Error loading dashboard data:', error);
-        }
-    };
+    // Initial Load - Force it
+    console.log('Triggering initial dashboard.refresh...');
+    // Small delay to ensure DOM is ready? (Logic is inside DOMContentLoaded so unnecessary but safe)
+    setTimeout(() => dashboard.refresh(), 500);
 
-    // Restore Data Loading Trigger
+    // Restore Data Loading Trigger (Refresh on dashboard click)
     const dashboardBtn = document.querySelector('[data-target="dashboard"]');
     if (dashboardBtn) {
-        dashboardBtn.addEventListener('click', loadDashboardData);
+        dashboardBtn.addEventListener('click', () => dashboard.refresh());
     } else {
         console.error('CRITICAL: Dashboard button not found!');
     }
 
-    // Initial Load - Force it
-    console.log('Triggering initial loadDashboardData...');
-    setTimeout(loadDashboardData, 500); // Small delay to ensure DOM is ready? (Logic is inside DOMContentLoaded so unnecessary but safe)
-
     // Debug View State
     setTimeout(() => {
         const dash = document.getElementById('view-dashboard');
-        console.log('Dashboard View State:', dash.className, 'Display:', window.getComputedStyle(dash).display);
+        if (dash) console.log('Dashboard View State:', dash.className, 'Display:', window.getComputedStyle(dash).display);
     }, 1000);
-    // The following lines were likely misplaced and are now commented out or removed as they were causing syntax errors.
-    // updateAllPatientsTable(patients); // Initial render of full list
-    // } catch (error) {
-    //     console.error('Error loading dashboard data:', error);
-    // }
-    // };
 
-    // Stats update removed
-    /*
-    const updateDashboardStats = (patients) => {
-        const totalPatients = patients.length;
-        const patientsCountEl = document.getElementById('stats-total-patients');
-        if (patientsCountEl) patientsCountEl.textContent = totalPatients;
-    };
-    */
 
-    const updateRecentPatientsTable = (patients) => {
-        const tbody = document.getElementById('table-recent-patients');
-        if (!tbody) return;
-
-        tbody.innerHTML = ''; // Clear existing rows
-
-        // Sort by updated_at desc and take top 5
-        const recentPatients = patients.slice(0, 5);
-
-        if (recentPatients.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="px-4 py-8 text-center text-gray-400 italic">
-                        Aucun patient enregistré.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        recentPatients.forEach(patient => {
-            const row = document.createElement('tr');
-            const age = patient.birthDate ? calculateAge(patient.birthDate) + ' ans' : '-';
-            const lastVisit = patient.updated_at ? new Date(patient.updated_at).toLocaleDateString('fr-FR') : '-';
-
-            row.innerHTML = `
-                <td class="px-4 py-3 font-medium text-gray-900">${patient.lastName || ''}</td>
-                <td class="px-4 py-3 text-gray-600">${patient.firstName || ''}</td>
-                <td class="px-4 py-3 text-gray-500">${age}</td>
-                <td class="px-4 py-3 text-gray-500">${patient.gp || '-'}</td>
-                <td class="px-4 py-3 text-gray-500">${lastVisit}</td>
-                <td class="px-4 py-3 text-right"></td> 
-            `;
-
-            // Create button programmatically
-            const actionCell = row.querySelector('td:last-child');
-            const btn = document.createElement('button');
-            btn.className = 'text-blue-600 hover:text-blue-800 transition-colors p-1';
-            btn.title = 'Ouvrir le dossier';
-            btn.innerHTML = '<i class="fas fa-folder-open fa-lg"></i>';
-            btn.addEventListener('click', () => openPatientHandler(patient.db_id));
-            actionCell.appendChild(btn);
-
-            tbody.appendChild(row);
-        });
-    };
-
-    const updateAllPatientsTable = (patients) => {
-        const tbody = document.getElementById('table-all-patients');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        if (patients.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="px-4 py-8 text-center text-gray-400 italic">
-                        Aucun patient trouvé.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        patients.forEach(patient => {
-            const row = document.createElement('tr');
-            const age = patient.birthDate ? calculateAge(patient.birthDate) + ' ans' : '-';
-            const lastVisit = patient.updated_at ? new Date(patient.updated_at).toLocaleDateString('fr-FR') : '-';
-
-            row.innerHTML = `
-                <td class="px-4 py-3 font-medium text-gray-900">${patient.lastName || ''}</td>
-                <td class="px-4 py-3 text-gray-600">${patient.firstName || ''}</td>
-                <td class="px-4 py-3 text-gray-500">${age}</td>
-                <td class="px-4 py-3 text-gray-500">${patient.gp || '-'}</td>
-                <td class="px-4 py-3 text-gray-500">${lastVisit}</td>
-                <td class="px-4 py-3 text-right flex justify-end gap-4"></td>
-            `;
-
-            const actionCell = row.querySelector('td:last-child');
-
-            // Open Button
-            const btnOpen = document.createElement('button');
-            btnOpen.className = 'text-blue-600 hover:text-blue-800 transition-colors p-1';
-            btnOpen.title = 'Ouvrir le dossier';
-            btnOpen.innerHTML = '<i class="fas fa-folder-open fa-lg"></i>';
-            btnOpen.addEventListener('click', () => openPatientHandler(patient.db_id));
-            actionCell.appendChild(btnOpen);
-
-            // Delete Button
-            const btnDelete = document.createElement('button');
-            btnDelete.className = 'text-red-400 hover:text-red-600 transition-colors p-1';
-            btnDelete.title = 'Supprimer le dossier';
-            btnDelete.innerHTML = '<i class="fas fa-trash-alt fa-lg"></i>';
-            btnDelete.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                // Use robust confirmation with normalized text or exact match
-                if (confirm(`Êtes-vous sûr de vouloir supprimer le dossier de ${patient.lastName} ${patient.firstName} ?`)) {
-                    try {
-                        // Check if deleting active patient (loose equality)
-                        if (currentPatient && (currentPatient.db_id == patient.db_id)) {
-                            if (typeof closePatientHandler === 'function') {
-                                closePatientHandler();
-                            }
-                        }
-
-                        await window.electronAPI.deletePatient(patient.db_id);
-                        loadDashboardData(); // Refresh list
-                        if (window.showNotification) showNotification('Dossier supprimé', 'success');
-                    } catch (err) {
-                        console.error('Error deleting patient:', err);
-                        alert('Erreur lors de la suppression');
-                    }
-                }
-            });
-            actionCell.appendChild(btnDelete);
-
-            tbody.appendChild(row);
-        });
-    };
-
-    // Sorting Logic
-    let sortDirection = 'asc';
-    const sortBtn = document.getElementById('sort-name');
-    if (sortBtn) {
-        sortBtn.addEventListener('click', () => {
-            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            // Update icon
-            sortBtn.innerHTML = `Nom <i class="fas fa-sort-${sortDirection === 'asc' ? 'alpha-down' : 'alpha-up'} ml-1"></i>`;
-
-            const sorted = [...allPatients].sort((a, b) => {
-                const nameA = (a.lastName || '').toLowerCase();
-                const nameB = (b.lastName || '').toLowerCase();
-                if (nameA < nameB) return sortDirection === 'asc' ? -1 : 1;
-                if (nameA > nameB) return sortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
-            updateAllPatientsTable(sorted);
-        });
-    }
-
-    // Search Logic
-    const searchInput = document.getElementById('dashboard-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = allPatients.filter(p =>
-                (p.lastName && p.lastName.toLowerCase().includes(term)) ||
-                (p.firstName && p.firstName.toLowerCase().includes(term))
-            );
-            updateAllPatientsTable(filtered);
-        });
-    }
-
-    // Load data on startup
-    loadDashboardData();
-
-    // Refresh data when switching to dashboard
-    document.querySelector('[data-target="dashboard"]').addEventListener('click', loadDashboardData);
 
     // New Patient Button (Delegated Event for Stability)
     document.addEventListener('click', (e) => {
@@ -635,6 +471,12 @@ document.addEventListener('DOMContentLoaded', () => {
             gender: document.getElementById('inp-gender').value,
             diagnosisYear: document.getElementById('inp-diagnosis-year').value,
             gp: document.getElementById('inp-gp').value,
+            office: document.getElementById('inp-office').value, // New Field
+            idsp: document.getElementById('inp-idsp').value, // New Field
+            phone: document.getElementById('inp-phone').value,
+            email: document.getElementById('inp-email').value,
+            emergencyContact: document.getElementById('inp-emergency').value, // New field
+            ins: document.getElementById('inp-ins').value,
 
             // New Risk Profile Structure
             riskProfile: {
@@ -693,16 +535,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let resultId;
             if (id) {
-                // Update existing
-                await window.electronAPI.updatePatient(parseInt(id), patientData);
+                // Update existing using Manager
+                // Note: The manager updates local state automatically if ID matches
+                await patientManager.update(parseInt(id), patientData);
                 resultId = parseInt(id);
                 console.log('Update successful, ID:', resultId);
 
                 // Refresh list logic only needed if we don't reload context, but openPatientHandler handles everything
-                loadDashboardData();
+                dashboard.refresh();
             } else {
-                // Create new
-                resultId = await window.electronAPI.createPatient(patientData);
+                // Create new using Manager
+                resultId = await patientManager.create(patientData);
                 console.log('Create successful, new ID:', resultId);
 
                 // CRITICAL: Switch context to the new patient immediately
@@ -718,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Refresh list (already done if openPatientHandler called, but harmless to call again for dashboard cache)
-            if (id) loadDashboardData();
+            if (id) dashboard.refresh();
 
         } catch (err) {
             console.error('Error saving patient:', err);
@@ -733,58 +576,159 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000); // 1 second debounce
 
     // Save Identity & Risks (Unified) - Manual Button Removed
-    // Auto-save logic handles everything.
+    // --- Formating Helpers ---
+    function toTitleCase(str) {
+        if (!str) return '';
+        return str.toLowerCase().split(' ').map(word => {
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+    }
 
-    // Auto-Save Listeners (Specific Targets to prevent bleeding)
-    const identityInputs = [
-        'inp-lastname', 'inp-firstname', 'inp-birthdate', 'inp-diagnosis-year',
-        'risk-dyslipidemia', 'risk-tobacco', 'risk-heredity',
-        'macro-avc', 'macro-coronary', 'macro-aomi', 'macro-stenosis',
-        'micro-retino', 'micro-nephro', 'micro-neuro-sens', 'micro-neuro-auto',
-        'other-hf', 'other-af',
-        'inp-gender', 'inp-gp'
-    ];
+    // --- Name Auto-Formatting ---
+    const inpNom = document.getElementById('inp-lastname');
+    const inpPrenom = document.getElementById('inp-firstname');
 
-    identityInputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            // Determine event type based on element type
-            const eventType = (el.tagName === 'SELECT' || el.type === 'date') ? 'change' : 'input';
-
-            el.addEventListener(eventType, () => {
-                if (eventType === 'input') {
-                    debouncedSave();
-                } else {
-                    saveIdentityForm(false); // Immediate save for selects/dates
+    if (inpNom) {
+        inpNom.addEventListener('blur', () => {
+            if (inpNom.value) {
+                inpNom.value = inpNom.value.toUpperCase();
+                // Update Sidebar Banner
+                const bannerName = document.getElementById('active-patient-name');
+                const firstName = document.getElementById('inp-firstname').value;
+                if (bannerName) {
+                    bannerName.textContent = `${inpNom.value} ${firstName}`;
                 }
+                // Trigger change event to ensure autosave/updates catch it
+                inpNom.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+
+    if (inpPrenom) {
+        inpPrenom.addEventListener('blur', () => {
+            if (inpPrenom.value) {
+                inpPrenom.value = toTitleCase(inpPrenom.value);
+                // Update Sidebar Banner
+                const bannerName = document.getElementById('active-patient-name');
+                const lastName = document.getElementById('inp-lastname').value;
+                if (bannerName) {
+                    bannerName.textContent = `${lastName} ${inpPrenom.value}`;
+                }
+                // Trigger change event to ensure autosave/updates catch it
+                inpPrenom.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+
+    // --- Phone & Email Helpers ---
+    const inpPhone = document.getElementById('inp-phone');
+    const inpEmail = document.getElementById('inp-email');
+
+    if (inpPhone) {
+        inpPhone.addEventListener('input', (e) => {
+            let val = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            if (val.length > 10) val = val.substring(0, 10); // Limit to 10
+
+            // Format: 00 00 00 00 00
+            const parts = [];
+            for (let i = 0; i < val.length; i += 2) {
+                parts.push(val.substring(i, i + 2));
+            }
+            e.target.value = parts.join(' ');
+        });
+    }
+
+    if (inpEmail) {
+        inpEmail.addEventListener('blur', () => {
+            const val = inpEmail.value;
+            // Basic RFC 5322 regex
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (val && !emailRegex.test(val)) {
+                // Simple ergonomic feedback: Red border if invalid
+                inpEmail.classList.add('border-red-500', 'bg-red-50');
+            } else {
+                inpEmail.classList.remove('border-red-500', 'bg-red-50');
+            }
+        });
+    }
+
+    // --- INS Formatting ---
+    const inpIns = document.getElementById('inp-ins');
+    if (inpIns) {
+        inpIns.addEventListener('input', (e) => {
+            let val = e.target.value.replace(/\D/g, ''); // Digits only
+            if (val.length > 15) val = val.substring(0, 15);
+
+            // Format: 1 23 45 67 890 123 45 (Standard NIR format)
+            // Groups: 1, 2, 2, 2, 3, 3, 2
+            let formatted = '';
+            const groups = [1, 2, 2, 2, 3, 3, 2];
+            let idx = 0;
+
+            for (let g of groups) {
+                if (idx >= val.length) break;
+                let chunk = val.substring(idx, idx + g);
+                formatted += chunk + ' ';
+                idx += g;
+            }
+            e.target.value = formatted.trim();
+        });
+    }
+
+    // Auto-Save Logic with Debounce
+    function triggerAutoSave() {
+        // Auto-Save Listeners (Specific Targets to prevent bleeding)
+        const identityInputs = [
+            'inp-lastname', 'inp-firstname', 'inp-birthdate', 'inp-diagnosis-year',
+            'risk-dyslipidemia', 'risk-tobacco', 'risk-heredity',
+            'macro-avc', 'macro-coronary', 'macro-aomi', 'macro-stenosis',
+            'micro-retino', 'micro-nephro', 'micro-neuro-sens', 'micro-neuro-auto',
+            'other-hf', 'other-af',
+            'inp-gender', 'inp-gp', 'inp-office', 'inp-idsp', 'inp-phone', 'inp-email', 'inp-ins', 'inp-emergency'
+        ];
+
+        identityInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                // Determine event type based on element type
+                const eventType = (el.tagName === 'SELECT' || el.type === 'date') ? 'change' : 'input';
+
+                el.addEventListener(eventType, () => {
+                    if (eventType === 'input') {
+                        debouncedSave();
+                    } else {
+                        saveIdentityForm(false); // Immediate save for selects/dates
+                    }
+                });
+            }
+        });
+
+        // Calculation Listeners (Identity specific)
+        const inpBirthdate = document.getElementById('inp-birthdate');
+        const inpDiagnosisYear = document.getElementById('inp-diagnosis-year');
+
+        if (inpBirthdate) {
+            inpBirthdate.addEventListener('change', (e) => {
+                updateAge(e.target.value);
+                // specific listener above handles save
             });
         }
-    });
 
-    // Calculation Listeners (Identity specific)
-    const inpBirthdate = document.getElementById('inp-birthdate');
-    const inpDiagnosisYear = document.getElementById('inp-diagnosis-year');
+        if (inpDiagnosisYear) {
+            // Diagnosis Year moved to Medical Profile
+            // Listener will be re-attached or handled via 'change' event on the new element
+            inpDiagnosisYear.addEventListener('input', (e) => {
+                updateDuration(e.target.value);
+            });
+        }
 
-    if (inpBirthdate) {
-        inpBirthdate.addEventListener('change', (e) => {
-            updateAge(e.target.value);
-            // specific listener above handles save
-        });
+        // Initialize Date Field to Today
+        const bioDateInput = document.getElementById('bio-date');
+        if (bioDateInput) {
+            bioDateInput.valueAsDate = new Date();
+        }
     }
-
-    if (inpDiagnosisYear) {
-        // Diagnosis Year moved to Medical Profile
-        // Listener will be re-attached or handled via 'change' event on the new element
-        inpDiagnosisYear.addEventListener('input', (e) => {
-            updateDuration(e.target.value);
-        });
-    }
-
-    // Initialize Date Field to Today
-    const bioDateInput = document.getElementById('bio-date');
-    if (bioDateInput) {
-        bioDateInput.valueAsDate = new Date();
-    }
+    triggerAutoSave(); // Invoke the function
 
     // Initialize Biological Module
     initBiologicalFollowUp();
@@ -811,15 +755,27 @@ function initProtocolLogic(onSaveCallback) {
         const card = document.getElementById(`card-${p}`);
         if (!checkbox || !card) return;
 
-        const color = checkbox.dataset.color || 'blue';
+        const colorKey = checkbox.dataset.color || 'blue';
+        const colorMap = {
+            green: '#16a34a', // green-600
+            red: '#dc2626',   // red-600
+            blue: '#2563eb',  // blue-600
+            yellow: '#ca8a04', // yellow-600
+            purple: '#9333ea' // purple-600
+        };
 
         if (checkbox.checked) {
             // Active
             card.classList.remove('bg-gray-50', 'border-gray-200', 'hover:border-blue-300');
-            card.classList.add(`bg-${color}-50`, `border-${color}-300`);
+            card.classList.add(`bg-${colorKey}-100`);
+            // Use inline style to guarantee border color
+            card.style.borderColor = colorMap[colorKey];
+            card.style.borderWidth = '2px';
         } else {
             // Inactive
-            card.classList.remove(`bg-${color}-50`, `border-${color}-300`);
+            card.classList.remove(`bg-${colorKey}-100`);
+            card.style.borderColor = ''; // Reset to CSS default
+            card.style.borderWidth = '';
             card.classList.add('bg-gray-50', 'border-gray-200', 'hover:border-blue-300');
         }
     };
@@ -860,9 +816,11 @@ function initProtocolLogic(onSaveCallback) {
             });
 
             // Also save on date change
-            dateInput.addEventListener('change', () => {
-                if (onSaveCallback) onSaveCallback();
-            });
+            if (dateInput) {
+                dateInput.addEventListener('change', () => {
+                    if (onSaveCallback) onSaveCallback();
+                });
+            }
         }
     });
 }
@@ -886,11 +844,11 @@ function updateProtocolBadges(overrideProtocols = null) {
     // Definitions
     const definitions = [
         { key: 'rcva', label: 'RCVA', color: 'bg-red-100 text-red-800' },
-        { key: 'dt2', label: 'DT2', color: 'bg-yellow-100 text-yellow-800' },
+        { key: 'dt2', label: 'DT2', color: 'bg-green-100 text-green-800' },
         { key: 'smoke', label: 'BAT', color: 'bg-blue-100 text-blue-800' }, // BAT = Smoke/Asthme/BPCO group
         { key: 'asthme', label: 'BAT', color: 'bg-blue-100 text-blue-800' },
         { key: 'bpco', label: 'BAT', color: 'bg-blue-100 text-blue-800' },
-        { key: 'cog', label: 'Tb Cog', color: 'bg-green-100 text-green-800' },
+        { key: 'cog', label: 'COG', color: 'bg-yellow-100 text-yellow-800' },
         { key: 'prev', label: 'Prev', color: 'bg-purple-100 text-purple-800' }
     ];
 

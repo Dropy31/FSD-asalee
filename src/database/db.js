@@ -29,7 +29,8 @@ function initDatabase(customPath) {
             uuid TEXT UNIQUE,
             encrypted_data TEXT NOT NULL,
             created_at TEXT,
-            updated_at TEXT
+            updated_at TEXT,
+            last_viewed_at TEXT
         )
     `;
     db.exec(createTableQuery);
@@ -129,12 +130,20 @@ function initDatabase(customPath) {
         db.exec('ALTER TABLE etp_sessions ADD COLUMN educational_objectives TEXT');
     }
 
-    // Migration: Add is_system to document_templates
     try {
         db.prepare('SELECT is_system FROM document_templates LIMIT 1').get();
     } catch (e) {
         console.log('Migrating document_templates: adding is_system...');
         db.exec('ALTER TABLE document_templates ADD COLUMN is_system BOOLEAN DEFAULT 0');
+    }
+
+    // Migration: Add last_viewed_at to patients
+    try {
+        db.prepare('SELECT last_viewed_at FROM patients LIMIT 1').get();
+    } catch (e) {
+        console.log('Migrating patients: adding last_viewed_at...');
+        db.exec('ALTER TABLE patients ADD COLUMN last_viewed_at TEXT');
+        db.exec('UPDATE patients SET last_viewed_at = updated_at');
     }
 
     // Migration: Add policies/protocols to existing patients (Data Migration)
@@ -230,25 +239,25 @@ function createPatient(patientData) {
 
     // Encrypt the entire patient object
     // We add the ID to the object for reference, but the primary key is the UUID column + internal ID
-    const patientWithMeta = { ...patientData, uuid, created_at: now, updated_at: now };
+    const patientWithMeta = { ...patientData, uuid, created_at: now, updated_at: now, last_viewed_at: now };
     const encrypted = cryptoHelper.encrypt(JSON.stringify(patientWithMeta));
 
     // Store as JSON string of the encrypted object { iv, encryptedData }
     const encryptedString = JSON.stringify(encrypted);
 
     const stmt = db.prepare(`
-        INSERT INTO patients (uuid, encrypted_data, created_at, updated_at)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO patients (uuid, encrypted_data, created_at, updated_at, last_viewed_at)
+        VALUES (?, ?, ?, ?, ?)
     `);
 
-    const info = stmt.run(uuid, encryptedString, now, now);
+    const info = stmt.run(uuid, encryptedString, now, now, now);
     return info.lastInsertRowid;
 }
 
 function getAllPatients() {
     if (!db) throw new Error('Database not initialized');
 
-    const stmt = db.prepare('SELECT * FROM patients ORDER BY updated_at DESC');
+    const stmt = db.prepare('SELECT * FROM patients ORDER BY last_viewed_at DESC, updated_at DESC');
     const rows = stmt.all();
 
     return rows.map(row => {
@@ -258,6 +267,8 @@ function getAllPatients() {
             const patient = JSON.parse(decryptedJson);
             // Attach the DB ID to the object for reference
             patient.db_id = row.id;
+            patient.updated_at = row.updated_at;
+            patient.last_viewed_at = row.last_viewed_at;
             return patient;
         } catch (err) {
             console.error(`Failed to decrypt patient ${row.id}:`, err);
@@ -274,11 +285,20 @@ function getPatientById(id) {
 
     if (!row) return null;
 
+    // Update last_viewed_at
+    const now = new Date().toISOString();
+    try {
+        db.prepare('UPDATE patients SET last_viewed_at = ? WHERE id = ?').run(now, id);
+    } catch (e) {
+        console.error('Failed to update last_viewed_at', e);
+    }
+
     try {
         const encryptedObj = JSON.parse(row.encrypted_data);
         const decryptedJson = cryptoHelper.decrypt(encryptedObj);
         const patient = JSON.parse(decryptedJson);
         patient.db_id = row.id;
+        patient.last_viewed_at = now;
         return patient;
     } catch (err) {
         console.error(`Failed to decrypt patient ${id}:`, err);
