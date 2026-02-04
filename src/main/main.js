@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+console.log("Main process started - Groups support active");
 const path = require('path');
 const db = require('../database/db');
 const auth = require('./auth');
@@ -212,4 +213,33 @@ ipcMain.handle('db:update-macro', (event, id, data) => {
 
 ipcMain.handle('db:delete-macro', (event, id) => {
     return db.deleteMacro(id);
+});
+
+// Groups IPC Handlers
+ipcMain.handle('db:create-group', (event, data) => {
+    return db.createGroup(data);
+});
+
+ipcMain.handle('db:get-groups', () => {
+    return db.getAllGroups();
+});
+
+ipcMain.handle('db:update-group', (event, id, data) => {
+    return db.updateGroup(id, data);
+});
+
+ipcMain.handle('db:delete-group', (event, id) => {
+    return db.deleteGroup(id);
+});
+
+ipcMain.handle('db:add-patient-to-group', (event, groupId, patientId) => {
+    return db.addPatientToGroup(groupId, patientId);
+});
+
+ipcMain.handle('db:remove-patient-from-group', (event, groupId, patientId) => {
+    return db.removePatientFromGroup(groupId, patientId);
+});
+
+ipcMain.handle('db:get-group-patients', (event, groupId) => {
+    return db.getPatientsInGroup(groupId);
 });

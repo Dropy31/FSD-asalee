@@ -5,6 +5,7 @@ import { debounce } from './modules/utils.js';
 import { initNavigation, updateNavigationState, viewTitles } from './modules/navigation.js';
 import { patientManager } from './modules/patient-manager.js';
 import { dashboard } from './modules/dashboard.js';
+import { groupsManager } from './modules/groups-manager.js'; // Import Groups Manager
 
 // --- UI HELPER FUNCTIONS (GLOBAL) ---
 function showNotification(message, type = 'success') {
@@ -207,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setSafeValue('other-liver', others.liver || 'NON');
 
                 // Populate Protocols
+                // Populate Protocols
                 const protocols = patient.protocols || {};
                 ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
                     const cb = document.getElementById(`proto-${p}`);
@@ -251,8 +253,12 @@ document.addEventListener('DOMContentLoaded', () => {
             updateNavigationState(true);
 
             // Show Active Patient Banner
+            // Show Active Patient Banner & Hide Placeholder
             const banner = document.getElementById('active-patient-banner');
             const bannerName = document.getElementById('active-patient-name');
+            const placeholder = document.getElementById('patient-placeholder');
+
+            if (placeholder) placeholder.classList.add('hidden');
             if (banner && bannerName) {
                 bannerName.textContent = `${patient.lastName.toUpperCase()} ${patient.firstName}`;
                 banner.classList.remove('hidden');
@@ -276,9 +282,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateNavigationState(false);
         updateSidebarVisibility({}); // Hide all protocol tabs including non-diabetes medical tabs
 
-        // Hide Banner
+        // Hide Banner, Show Placeholder
         const banner = document.getElementById('active-patient-banner');
+        const placeholder = document.getElementById('patient-placeholder');
+
         if (banner) banner.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
 
         // Go to Dashboard
         document.querySelector('[data-target="dashboard"]').click();
@@ -362,6 +371,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    // --- Specific View Loaders ---
+    const groupsBtn = document.querySelector('[data-target="groups"]');
+    if (groupsBtn) {
+        groupsBtn.addEventListener('click', () => {
+            console.log('Loading Groups...');
+            groupsManager.loadGroups();
+        });
+    }
+
     // New Patient Button (Delegated Event for Stability)
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('#btn-new-patient');
@@ -399,7 +417,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ['dt2', 'rcva', 'smoke', 'asthme', 'bpco', 'prev', 'cog'].forEach(p => {
                 const cb = document.getElementById(`proto-${p}`);
                 const dateInp = document.getElementById(`date-${p}`);
-                if (cb) cb.checked = false;
+                if (cb) {
+                    cb.checked = false;
+                    // Trigger visual update to ensure inputs are hidden
+                    if (typeof updateCardVisual === 'function') updateCardVisual(cb);
+                }
                 if (dateInp) dateInp.value = '';
             });
 
@@ -744,6 +766,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.initPharmaBook) window.initPharmaBook();
     if (window.initTemplateManager) window.initTemplateManager();
     if (window.initTemplateManager) window.initTemplateManager();
+    if (window.initTemplateManager) window.initTemplateManager();
+
+    // Initialize Groups Manager
+    groupsManager.init();
+
     initProtocolLogic(() => saveIdentityForm(false)); // Pass auto-save callback
 });
 
@@ -886,54 +913,65 @@ function updateSidebarVisibility(overrideProtocols = null) {
         });
     }
 
-    // Logic for Tabs
-    // PROFILE (Risk Grid) -> DT2 or RCVA
-    const showProfile = activeProtocols.dt2 || activeProtocols.rcva;
-    toggleNav('patient-profile', showProfile);
+    // Helper to toggle individual nav items by data-target
+    const toggleItem = (target, show) => {
+        const btn = document.querySelector(`button[data-target="${target}"]`);
+        if (btn) {
+            const li = btn.closest('li');
+            if (li) {
+                if (show) li.classList.remove('hidden');
+                else li.classList.add('hidden');
+            }
+        }
+    };
 
-    // Strict Visibility: Hide Bio, Exams, Treatments, ETP, Synthesis if !DT2 (RCVA does not use these)
-    const isDiabetes = activeProtocols.dt2;
-    const medicalTabs = ['followup', 'exams', 'treatments', 'education', 'synthesis'];
-    medicalTabs.forEach(tab => {
-        toggleNav(tab, isDiabetes);
-    });
+    // Helper to toggle Groups
+    const toggleGroup = (groupId, show) => {
+        const group = document.getElementById(groupId);
+        if (group) {
+            if (show) group.classList.remove('hidden');
+            else group.classList.add('hidden');
+        }
+    };
 
-    // RESPIRATORY -> Asthma or BPCO or Smoke
+    // --- LOGIC ---
+
+    // 1. MEDICAL GROUP (Green)
+    // Visible if DT2 or RCVA is active
+    const isDT2 = activeProtocols.dt2;
+    const isRCVA = activeProtocols.rcva;
+    const showMedicalGroup = isDT2 || isRCVA;
+
+    toggleGroup('group-medical', showMedicalGroup);
+
+    if (showMedicalGroup) {
+        // If RCVA only, maybe hide specific diabetes tabs?
+        // Legacy: "Strict Visibility: Hide Bio, Exams, Treatments, ETP, Synthesis if !DT2"
+        // So if RCVA only, we show Profile, but hide others?
+        // Let's keep that logic for safety.
+        const showDiabetesTabs = isDT2;
+
+        ['followup', 'exams', 'treatments', 'education', 'synthesis'].forEach(t => {
+            toggleItem(t, showDiabetesTabs);
+        });
+
+        // Profile is always shown if group is shown
+        toggleItem('patient-profile', true);
+    }
+
+    // 2. RESPIRATORY GROUP (Blue)
     const showResp = activeProtocols.asthme || activeProtocols.bpco || activeProtocols.smoke;
-    toggleNav('respiratory', showResp);
+    toggleGroup('group-respiratory', showResp);
 
-    // PREVENTION -> Prev
-    toggleNav('prevention', activeProtocols.prev);
+    // 3. COGNITIVE GROUP (Yellow)
+    toggleGroup('group-cognitive', activeProtocols.cog);
 
-    // COGNITIVE -> Cog
-    toggleNav('cognitive', activeProtocols.cog);
+    // 4. PREVENTION GROUP (Purple)
+    toggleGroup('group-prevention', activeProtocols.prev);
 
-    // Show/Hide Specific Protocols Header
-    const hasSpecific = showResp || activeProtocols.prev || activeProtocols.cog;
-    const header = document.getElementById('section-protocols');
-    if (header) {
-        if (hasSpecific) header.classList.remove('hidden');
-        else header.classList.add('hidden');
-    }
+    // Note: Section 1 (General) and Group 1 (Identity) are always visible
 }
 
-function toggleNav(targetId, visible) {
-    const item = document.getElementById(`nav-item-${targetId.replace('patient-', '')}`); // nav-item-profile vs patient-profile
-    // My IDs in HTML: nav-item-profile, nav-item-respiratory, etc.
-    // targetId: patient-profile -> nav-item-profile? Yes.
-    // targetId: respiratory -> nav-item-respiratory.
-
-    let domId = `nav-item-${targetId}`;
-    if (targetId === 'patient-profile') domId = 'nav-item-profile';
-
-    const el = document.getElementById(domId);
-    if (el) {
-        if (visible) el.classList.remove('hidden');
-        else el.classList.add('hidden');
-    }
-}
-
-// Helper Functions
 // Helper Functions
 function updateAge(birthDateStr) {
     const el = document.getElementById('inp-age');
@@ -1445,6 +1483,10 @@ if (protocolGrid) {
             return;
         }
 
+        // --- 2-STATE LOGIC (Active <-> Inactive) ---
+        // If clicking an INPUT (date), ignore
+        if (e.target.tagName === 'INPUT' && (e.target.type === 'date' || e.target.type === 'text')) return;
+
         // Note: The actual visual toggling (bg colors) works via CSS peer-checked or separate JS?
         // If it was JS, we'd see it. Looking at index.html, it seems purely detailed JS logic was missing or implied?
         // Actually, looking at index.html, classes like `peer-checked:block` handle the date input input visibility.
@@ -1455,10 +1497,25 @@ if (protocolGrid) {
         // We can listen to 'change' on the grid for robust visual updates.
     });
 
-    // Separate Change Listener for Visuals (Color Toggling)
+    // Separate Change Listener for Visuals (Color Toggling) & Auto-Date
     protocolGrid.addEventListener('change', (e) => {
         if (e.target.type === 'checkbox' && e.target.dataset.protocol) {
             updateCardVisual(e.target);
+
+            // Auto-set Date
+            const protocolKey = e.target.dataset.protocol;
+            const dateInput = document.getElementById(`date-${protocolKey}`);
+            if (dateInput) {
+                if (e.target.checked) {
+                    const now = new Date();
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const year = now.getFullYear();
+                    dateInput.value = `${year}-${month}-${day}`;
+                } else {
+                    dateInput.value = '';
+                }
+            }
         }
     });
 }
@@ -1481,11 +1538,31 @@ function updateCardVisual(checkbox) {
     if (checkbox.checked) {
         card.classList.remove('bg-gray-50', 'border-gray-200');
         card.classList.add(classes.bg, classes.border, 'ring-2', classes.ring);
+
+        // Show Date Input
+        const protocol = checkbox.dataset.protocol;
+        const dateInp = document.getElementById(`date-${protocol}`);
+        if (dateInp) {
+            const container = dateInp.parentElement;
+            if (container) container.classList.remove('hidden');
+        }
+
+
     } else {
         // Reset specific active classes first
         card.classList.remove(classes.bg, classes.border, 'ring-2', classes.ring);
         // Add default
         card.classList.add('bg-gray-50', 'border-gray-200');
+
+        // Hide Date Input
+        const protocol = checkbox.dataset.protocol;
+        const dateInp = document.getElementById(`date-${protocol}`);
+        if (dateInp) {
+            const container = dateInp.parentElement;
+            if (container) container.classList.add('hidden');
+        }
+
+
     }
 }
 // Ensure Visuals are updated on load (populating from DB) - Call this after loading patient

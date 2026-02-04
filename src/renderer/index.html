@@ -5,12 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;">
+        content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;">
     <title>Suivi Diabète - Desktop Secure</title>
     <!-- Local Libraries -->
     <link rel="stylesheet" href="tailwind_build.css">
     <link rel="stylesheet" href="libs/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts: Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap" rel="stylesheet">
     <script src="libs/chartjs/chart.umd.js"></script>
     <script src="libs/chartjs-adapter/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
@@ -18,164 +22,221 @@
 <body class="bg-gray-100 font-sans h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-slate-800 text-white flex flex-col shadow-lg">
-        <div class="p-6 border-b border-slate-700 flex items-center gap-3">
-            <i class="fas fa-heartbeat text-2xl text-blue-400"></i>
-            <h1 class="text-xl font-bold tracking-wide">Diabète<span class="text-blue-400">Suivi</span></h1>
+    <aside class="w-64 bg-slate-800 text-white flex flex-col shadow-lg h-screen">
+        <div class="p-4 sidebar-sep-gradient flex items-center justify-center shrink-0">
+            <h1 class="logo-text">PROSPER</h1>
         </div>
 
-        <div id="active-patient-banner" class="hidden bg-slate-700 p-4 border-b border-slate-600 animate-fade-in">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-blue-300 uppercase font-semibold tracking-wider">Dossier en cours</span>
-                <button id="btn-close-patient" class="text-slate-400 hover:text-white transition-colors"
-                    title="Fermer le dossier">
-                    <i class="fas fa-times"></i>
+        <!-- 2. Patient Context (Fixed) -->
+        <div class="shrink-0 bg-slate-800">
+            <!-- Placeholder (Default) -->
+            <div id="patient-placeholder" class="p-6 text-center sidebar-sep-gradient">
+                <div class="text-slate-500 text-sm italic">
+                    Sélectionnez un patient<br>ou créez-en un nouveau
+                </div>
+            </div>
+            <!-- Active Banner (Hidden) -->
+            <div id="active-patient-banner"
+                class="hidden bg-slate-700 p-4 animate-fade-in relative group sidebar-sep-gradient">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs text-blue-300 uppercase font-semibold tracking-wider">Dossier en cours</span>
+                    <button id="btn-close-patient" class="text-slate-400 hover:text-white transition-colors"
+                        title="Fermer le dossier">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-user-circle text-white text-lg"></i>
+                    <span id="active-patient-name" class="font-medium text-white truncate">--</span>
+                </div>
+                <!-- Badges Container moved here -->
+                <div id="protocol-badges" class="flex flex-nowrap overflow-hidden gap-1 mt-2 empty:hidden pl-3"></div>
+            </div>
+
+            <!-- 3. General Section (Fixed) -->
+            <div class="shrink-0 py-4 sidebar-sep-gradient">
+                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Général
+                </h3>
+                <ul class="space-y-1">
+                    <li>
+                        <button
+                            class="nav-btn active w-full flex items-center gap-3 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left nav-btn-general-align"
+                            data-target="dashboard">
+                            <i class="fas fa-users w-6 text-center icon-grey-light"></i> Patients
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn w-full flex items-center gap-3 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left nav-btn-general-align"
+                            data-target="groups">
+                            <i class="fas fa-users-cog w-6 text-center icon-grey-light"></i> Groupes
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn w-full flex items-center gap-3 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left opacity-50 cursor-not-allowed nav-btn-general-align"
+                            title="Bientôt disponible">
+                            <i class="fas fa-clinic-medical w-6 text-center icon-grey-light"></i> Cabinets
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            class="nav-btn w-full flex items-center gap-3 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left opacity-50 cursor-not-allowed nav-btn-general-align"
+                            title="Bientôt disponible">
+                            <i class="fas fa-calendar-alt w-6 text-center icon-grey-light"></i> Planning
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- 4. Patient Section (Scrollable - Fills Space) -->
+        <div class="flex-1 overflow-y-auto py-4 nav-scroll">
+            <div id="section-patient-file">
+                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Dossier
+                    Patient
+                </h3>
+
+                <!-- Group 1: Grey Bracket -->
+                <div class="ml-3 pl-5 mb-2" style="border-left: 3px solid transparent;">
+                    <ul class="space-y-1">
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="identity-protocols">
+
+                                <i class="fas fa-id-card w-6 text-center icon-grey-dark"></i> Identité & Protocoles
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="letters">
+
+                                <i class="fas fa-envelope-open-text w-6 text-center icon-grey-dark"></i> Courriers
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 2: Green Bracket -->
+                <div class="ml-3 pl-5 mb-2 hidden" id="group-medical" style="border-left: 3px solid transparent;">
+                    <ul class="space-y-1">
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
+                                data-target="patient-profile">
+                                <i class="fas fa-heartbeat w-6 text-center icon-green"></i> Profil Médical
+                                <i id="identity-alert-icon"
+                                    class="fas fa-exclamation-circle text-red-500 absolute right-4 hidden animate-pulse"
+                                    title="Mise à jour automatique"></i>
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="followup">
+                                <i class="fas fa-chart-line w-6 text-center icon-green"></i> Suivi Biologique
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="exams">
+                                <i class="fas fa-calendar-check w-6 text-center icon-green"></i> Examens
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="treatments">
+                                <i class="fas fa-prescription-bottle-alt w-6 text-center icon-green"></i>
+                                Traitements
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="education">
+                                <i class="fas fa-graduation-cap w-6 text-center icon-green"></i> ETP
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="synthesis">
+                                <i class="fas fa-chart-pie w-6 text-center icon-green"></i> Synthèse Diabète
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 3: Blue Bracket (Respiratoire) -->
+                <div class="ml-3 pl-5 mb-2 hidden" id="group-respiratory" style="border-left: 3px solid transparent;">
+                    <ul class="space-y-1">
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="respiratory">
+                                <i class="fas fa-lungs w-6 text-center icon-blue"></i> Respiratoire
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 4: Yellow Bracket (Cognitif) -->
+                <div class="ml-3 pl-5 mb-2 hidden" id="group-cognitive" style="border-left: 3px solid transparent;">
+                    <ul class="space-y-1">
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="cognitive">
+                                <i class="fas fa-brain w-6 text-center icon-yellow"></i> Troubles Cognitifs
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 5: Purple Bracket (Prevention) -->
+                <div class="ml-3 pl-5 mb-2 hidden" id="group-prevention" style="border-left: 3px solid transparent;">
+                    <ul class="space-y-1">
+                        <li>
+                            <button
+                                class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-2 pr-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
+                                data-target="prevention">
+                                <i class="fas fa-shield-alt w-6 text-center icon-purple"></i> Prévention
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 5. Outils Section (Fixed Bottom) -->
+        <div class="shrink-0 p-4 sidebar-sep-gradient-top bg-slate-800/50">
+            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Outils</h3>
+            <div class="grid grid-cols-3 gap-2">
+                <button
+                    class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-lg flex items-center justify-center text-slate-300 hover:text-white transition-all shadow-sm nav-btn"
+                    data-target="etp-library" title="Bibliothèque ETP">
+                    <i class="fas fa-book-medical text-lg"></i>
+                </button>
+                <button
+                    class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-lg flex items-center justify-center text-slate-300 hover:text-white transition-all shadow-sm nav-btn"
+                    data-target="pharma-book" title="Livret Pharmaceutique">
+                    <i class="fas fa-pills text-lg"></i>
+                </button>
+                <button
+                    class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-lg flex items-center justify-center text-slate-300 hover:text-white transition-all shadow-sm nav-btn"
+                    data-target="templates" title="Modèles de Documents">
+                    <i class="fas fa-file-alt text-lg"></i>
                 </button>
             </div>
-            <div class="flex items-center gap-2">
-                <i class="fas fa-user-circle text-white text-lg"></i>
-                <span id="active-patient-name" class="font-medium text-white truncate">--</span>
-            </div>
-            <!-- Badges Container moved here -->
-            <div id="protocol-badges" class="flex flex-nowrap overflow-hidden gap-1 mt-2 empty:hidden pl-3"></div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto py-4 space-y-6">
-            <!-- SECTION: GENERAL -->
-            <div>
-                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Général</h3>
-                <ul class="space-y-1">
-                    <li>
-                        <button
-                            class="nav-btn active w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="dashboard">
-                            <i class="fas fa-users w-6 text-center"></i> Patients
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                            class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="etp-library">
-                            <i class="fas fa-book-medical w-6 text-center"></i> Bibliothèque
-                        </button>
-                    </li>
-                    <li>
-                    <li>
-                        <button
-                            class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="pharma-book">
-                            <i class="fas fa-pills w-6 text-center"></i> Livret Pharmaceutique
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                            class="nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="templates">
-                            <i class="fas fa-file-alt w-6 text-center"></i> Modèles
-                        </button>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- SECTION: PATIENT -->
-            <div>
-                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Dossier Patient</h3>
-                <ul class="space-y-1">
-                    <li>
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
-                            data-target="identity-protocols">
-                            <i class="fas fa-id-card w-6 text-center"></i> Identité & Protocoles
-                        </button>
-                    </li>
-                    <li id="nav-item-profile" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left relative"
-                            data-target="patient-profile">
-                            <i class="fas fa-heartbeat w-6 text-center"></i> Profil Médical
-                            <i id="identity-alert-icon"
-                                class="fas fa-exclamation-circle text-red-500 absolute right-4 hidden animate-pulse"
-                                title="Mise à jour automatique: Néphropathie"></i>
-                        </button>
-                    </li>
-                    <li id="nav-item-followup" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="followup">
-                            <i class="fas fa-chart-line w-6 text-center"></i> Suivi Biologique
-                        </button>
-                    </li>
-                    <li id="nav-item-exams" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="exams">
-                            <i class="fas fa-calendar-check w-6 text-center"></i> Examens
-                        </button>
-                    </li>
-                    <li id="nav-item-treatments" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="treatments">
-                            <i class="fas fa-prescription-bottle-alt w-6 text-center"></i> Traitements
-                        </button>
-                    </li>
-                    <li id="nav-item-education" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="education">
-                            <i class="fas fa-graduation-cap w-6 text-center"></i> ETP
-                        </button>
-                    </li>
-                    <li id="nav-item-synthesis" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="synthesis">
-                            <i class="fas fa-chart-pie w-6 text-center"></i> Synthèse
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="letters">
-                            <i class="fas fa-envelope-open-text w-6 text-center"></i> Courriers
-                        </button>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- SECTION: SPECIFIC PROTOCOLS -->
-            <div id="section-protocols" class="hidden">
-                <h3 class="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">Protocoles
-                    Spécifiques</h3>
-                <ul class="space-y-1">
-                    <li id="nav-item-respiratory" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="respiratory">
-                            <i class="fas fa-lungs w-6 text-center"></i> Respiratoire
-                        </button>
-                    </li>
-                    <li id="nav-item-cognitive" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="cognitive">
-                            <i class="fas fa-brain w-6 text-center"></i> Cognitif
-                        </button>
-                    </li>
-                    <li id="nav-item-prevention" class="hidden">
-                        <button
-                            class="nav-btn patient-nav-btn w-full flex items-center gap-3 pl-10 pr-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium text-left"
-                            data-target="prevention">
-                            <i class="fas fa-shield-alt w-6 text-center"></i> Prévention
-                        </button>
-                    </li>
-                </ul>
-            </div>
-            </ul>
-            </div>
-        </nav>
-
-        <div class="p-4 border-t border-slate-700">
+        <div class="p-4 sidebar-sep-gradient-top">
             <div class="flex items-center gap-3 text-sm text-slate-400">
                 <div class="w-2 h-2 rounded-full bg-green-500"></div>
                 <span>Mode Sécurisé</span>
@@ -884,15 +945,14 @@
                                         class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Diabète
                                         Type 2</span>
                                 </div>
-                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
-                                    <div class="relative">
-                                        <input type="date" id="date-dt2"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-green-600 peer font-medium"
-                                            placeholder=" " />
-                                        <label for="date-dt2"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-green-700">Inclusion</label>
-                                    </div>
+                                <div class="mt-4 hidden flex items-center gap-2 animate-fade-in-up">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Inclusion
+                                        :</span>
+                                    <input type="date" id="date-dt2"
+                                        class="flex-1 block px-2 py-1 w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                        placeholder=" " />
                                 </div>
+
                             </label>
 
                             <!-- RCVA -->
@@ -909,15 +969,14 @@
                                         class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Risque
                                         CV Absolu</span>
                                 </div>
-                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
-                                    <div class="relative">
-                                        <input type="date" id="date-rcva"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-red-600 peer font-medium"
-                                            placeholder=" " />
-                                        <label for="date-rcva"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-red-700">Inclusion</label>
-                                    </div>
+                                <div class="mt-4 hidden flex items-center gap-2 animate-fade-in-up">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Inclusion
+                                        :</span>
+                                    <input type="date" id="date-rcva"
+                                        class="flex-1 block px-2 py-1 w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500"
+                                        placeholder=" " />
                                 </div>
+
                             </label>
 
                             <!-- Smoke -->
@@ -934,15 +993,14 @@
                                         class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Sevrage
                                         Tabac</span>
                                 </div>
-                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
-                                    <div class="relative">
-                                        <input type="date" id="date-smoke"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer font-medium"
-                                            placeholder=" " />
-                                        <label for="date-smoke"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-blue-700">Inclusion</label>
-                                    </div>
+                                <div class="mt-4 hidden flex items-center gap-2 animate-fade-in-up">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Inclusion
+                                        :</span>
+                                    <input type="date" id="date-smoke"
+                                        class="flex-1 block px-2 py-1 w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder=" " />
                                 </div>
+
                             </label>
 
                             <!-- Asthme -->
@@ -958,15 +1016,14 @@
                                     <span
                                         class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Asthme</span>
                                 </div>
-                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
-                                    <div class="relative">
-                                        <input type="date" id="date-asthme"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer font-medium"
-                                            placeholder=" " />
-                                        <label for="date-asthme"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-blue-700">Inclusion</label>
-                                    </div>
+                                <div class="mt-4 hidden flex items-center gap-2 animate-fade-in-up">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Inclusion
+                                        :</span>
+                                    <input type="date" id="date-asthme"
+                                        class="flex-1 block px-2 py-1 w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder=" " />
                                 </div>
+
                             </label>
 
                             <!-- BPCO -->
@@ -982,15 +1039,14 @@
                                     <span
                                         class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">BPCO</span>
                                 </div>
-                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
-                                    <div class="relative">
-                                        <input type="date" id="date-bpco"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer font-medium"
-                                            placeholder=" " />
-                                        <label for="date-bpco"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-blue-700">Inclusion</label>
-                                    </div>
+                                <div class="mt-4 hidden flex items-center gap-2 animate-fade-in-up">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Inclusion
+                                        :</span>
+                                    <input type="date" id="date-bpco"
+                                        class="flex-1 block px-2 py-1 w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder=" " />
                                 </div>
+
                             </label>
 
                             <!-- Cognitive -->
@@ -1007,15 +1063,14 @@
                                         class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Troubles
                                         Cognitifs</span>
                                 </div>
-                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
-                                    <div class="relative">
-                                        <input type="date" id="date-cog"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-yellow-600 peer font-medium"
-                                            placeholder=" " />
-                                        <label for="date-cog"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-yellow-700">Inclusion</label>
-                                    </div>
+                                <div class="mt-4 hidden flex items-center gap-2 animate-fade-in-up">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Inclusion
+                                        :</span>
+                                    <input type="date" id="date-cog"
+                                        class="flex-1 block px-2 py-1 w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                                        placeholder=" " />
                                 </div>
+
                             </label>
 
                             <!-- Prevention -->
@@ -1032,15 +1087,14 @@
                                         class="font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Prévention
                                         Syst.</span>
                                 </div>
-                                <div class="mt-4 hidden peer-checked:block animate-fade-in-up">
-                                    <div class="relative">
-                                        <input type="date" id="date-prev"
-                                            class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-gray-900 bg-white/50 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-purple-600 peer font-medium"
-                                            placeholder=" " />
-                                        <label for="date-prev"
-                                            class="absolute text-xs text-gray-500 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] left-2.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-2 peer-focus:scale-90 peer-focus:-translate-y-3 peer-focus:text-purple-700">Inclusion</label>
-                                    </div>
+                                <div class="mt-4 hidden flex items-center gap-2 animate-fade-in-up">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Inclusion
+                                        :</span>
+                                    <input type="date" id="date-prev"
+                                        class="flex-1 block px-2 py-1 w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                        placeholder=" " />
                                 </div>
+
                             </label>
                         </div>
                 </form>
@@ -2572,6 +2626,217 @@
                         class="modal-close-btn px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
                         Fermer
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================================================================== -->
+    <!-- VIEW: GROUPES -->
+    <!-- ==================================================================================================== -->
+    <div id="view-groups" class="view-section hidden h-full flex flex-col p-8 fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Groupes de Patients</h1>
+                <p class="text-slate-500">Gérez vos groupes de patients et leurs sessions ETP collectives.</p>
+            </div>
+            <button onclick="groupsManager.openCreateModal()"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition-colors flex items-center gap-2">
+                <i class="fas fa-plus"></i> Nouveau Groupe
+            </button>
+        </div>
+
+        <!-- Groups Grid -->
+        <div id="groups-list-container"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-8">
+            <!-- Cards will be injected here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="groups-empty-state"
+            class="hidden flex flex-col items-center justify-center flex-1 text-slate-400 -mt-10">
+            <i class="fas fa-users-slash text-5xl mb-4"></i>
+            <p class="text-lg">Aucun groupe créé</p>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE/EDIT GROUP -->
+    <div id="modal-group" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pl-64">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <h3 id="modal-group-title" class="font-bold text-lg text-slate-800">Nouveau Groupe</h3>
+                <button onclick="groupsManager.closeModal()"
+                    class="text-slate-400 hover:text-red-500 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="group-id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nom du Groupe <span
+                            class="text-red-500">*</span></label>
+                    <input type="text" id="inp-group-name"
+                        class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 px-4 py-2"
+                        placeholder="Ex: Atelier Cuisine Mai">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Description (Optionnel)</label>
+                    <textarea id="inp-group-desc" rows="4"
+                        class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 px-4 py-2"
+                        placeholder="Courte description..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Protocole (Optionnel)</label>
+                    <select id="inp-group-protocol"
+                        class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 px-4 py-2">
+                        <option value="">-- Aucun --</option>
+                        <option value="dt2">Diabète Type 2</option>
+                        <option value="rcva">Risque CV Absolu</option>
+                        <option value="smoke">Sevrage Tabac</option>
+                        <option value="asthme">Asthme</option>
+                        <option value="bpco">BPCO</option>
+                        <option value="cog">Troubles Cognitifs</option>
+                        <option value="prev">Prévention Syst.</option>
+                        <option value="autres">Autres</option>
+                    </select>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button onclick="groupsManager.closeModal()"
+                    class="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">Annuler</button>
+                <button onclick="groupsManager.saveGroup()"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: MANAGE GROUP MEMBERS -->
+    <div id="modal-group-details"
+        class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pl-64">
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-lg h-[650px] flex flex-col overflow-hidden transform transition-all">
+            <!-- Header -->
+            <div
+                class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-white z-10 rounded-t-3xl">
+                <div>
+                    <h2 id="details-group-name" class="text-2xl font-bold text-gray-800">Nom du Groupe</h2>
+                </div>
+                <button onclick="groupsManager.closeDetails()"
+                    class="text-gray-400 hover:text-gray-600 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Content Container -->
+            <div class="flex-1 overflow-y-auto bg-gray-50 p-8">
+
+                <!-- Section 1: Search & Add -->
+                <div class="mb-8 relative z-30">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Ajouter un
+                        nouveau membre</label>
+                    <div class="relative shadow-sm rounded-xl bg-white">
+                        <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input type="text" id="inp-search-db" placeholder="Rechercher un patient (Nom, Prénom)..."
+                            class="w-full pl-20 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-base focus:ring-4 focus:ring-blue-50/50 focus:border-blue-500 transition-all outline-none text-gray-700">
+                    </div>
+
+                    <!-- Search Results Dropdown (Absolute) -->
+                    <div id="db-patients-list"
+                        class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 hidden overflow-hidden z-40 max-h-[300px] overflow-y-auto">
+                        <!-- Results injected here -->
+                    </div>
+                </div>
+
+                <!-- Section 2: Current Members -->
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Membres
+                            actuels</label>
+                        <span id="details-group-count"
+                            class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">--/8</span>
+                    </div>
+
+                    <!-- Members Grid -->
+                    <div id="group-members-list" class="grid grid-cols-1 gap-3">
+                        <!-- Member cards injected here -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer removed to clean up space -->
+    </div>
+    </div>
+
+    <!-- MODAL: PICK SESSION -->
+    <div id="modal-group-session"
+        class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pl-64">
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] h-auto flex flex-col overflow-hidden transform transition-all">
+            <!-- Header -->
+            <div
+                class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-white z-10 rounded-t-3xl shrink-0">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Programmer une Séance</h2>
+                    <p class="text-sm text-gray-500">Sélectionnez une séance depuis la bibliothèque</p>
+                </div>
+                <button onclick="groupsManager.closeSessionModal()"
+                    class="text-gray-400 hover:text-gray-600 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden bg-gray-50">
+
+                <!-- Filters -->
+                <div class="p-6 bg-white border-b border-gray-100 shadow-sm z-10 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Protocol Filter -->
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Protocole</label>
+                            <select id="sel-session-filter-protocol" onchange="groupsManager.filterSessions()"
+                                class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                                <option value="">Tous les protocoles</option>
+                                <option value="dt2">Diabète Type 2</option>
+                                <option value="hrcv">Risque Cardio-Vasculaire</option>
+                                <option value="tabac">Sevrage Tabac</option>
+                                <option value="asthme">Asthme</option>
+                                <option value="bpco">BPCO</option>
+                                <option value="cognitif">Troubles Cognitifs</option>
+                                <option value="prevention">Prévention Systémique</option>
+                                <option value="autre">Autres</option>
+                            </select>
+                        </div>
+                        <!-- Competence Filter -->
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Compétence</label>
+                            <select id="sel-session-filter-category" onchange="groupsManager.filterSessions()"
+                                class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                                <option value="">Toutes compétences</option>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Toggle Mode -->
+                    <div class="flex items-center">
+                        <label
+                            class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                            <input type="checkbox" id="chk-session-filter-collective" checked
+                                onchange="groupsManager.filterSessions()"
+                                class="w-5 h-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">Séances Collectives uniquement</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- List -->
+                <div id="list-group-sessions" class="flex-1 overflow-y-auto p-6 space-y-3">
+                    <!-- Sessions injected here -->
                 </div>
             </div>
         </div>

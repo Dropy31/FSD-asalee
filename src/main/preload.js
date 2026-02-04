@@ -31,6 +31,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createMacro: (data) => ipcRenderer.invoke('db:create-macro', data),
     updateMacro: (id, data) => ipcRenderer.invoke('db:update-macro', id, data),
     deleteMacro: (id) => ipcRenderer.invoke('db:delete-macro', id),
+    // Groups
+    dbCreateGroup: (data) => ipcRenderer.invoke('db:create-group', data),
+    dbGetGroups: () => ipcRenderer.invoke('db:get-groups'),
+    dbUpdateGroup: (id, data) => ipcRenderer.invoke('db:update-group', id, data),
+    dbDeleteGroup: (id) => ipcRenderer.invoke('db:delete-group', id),
+    dbAddPatientToGroup: (groupId, patientId) => ipcRenderer.invoke('db:add-patient-to-group', groupId, patientId),
+    dbRemovePatientFromGroup: (groupId, patientId) => ipcRenderer.invoke('db:remove-patient-from-group', groupId, patientId),
+    dbGetGroupPatients: (groupId) => ipcRenderer.invoke('db:get-group-patients', groupId),
+
+    // Alias for consistency with groups-manager.js
+    dbGetSessions: () => ipcRenderer.invoke('db:get-sessions'),
+    dbGetAllSessions: () => ipcRenderer.invoke('db:get-sessions'),
+
     // Auth API
     getAuthStatus: () => ipcRenderer.invoke('auth:status'),
     login: (password) => ipcRenderer.invoke('auth:login', password),

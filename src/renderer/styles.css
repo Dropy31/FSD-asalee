@@ -464,16 +464,58 @@
     background-color: #334155 !important;
     /* slate-700 */
     color: #ffffff !important;
-    border-left: 4px solid #3b82f6;
-    /* blue-500 */
-    padding-left: calc(2.5rem - 4px);
-    /* Adjust padding to keep icon aligned (pl-10 = 2.5rem) */
+    font-weight: 600;
 }
 
-.nav-btn.active i {
-    color: #60a5fa !important;
-    /* blue-400 */
+/* Strict Alignment for General Sidebar Icons to match Patient Icons */
+/* Strict Alignment for General Sidebar Icons to match Patient Icons */
+.nav-btn-general-align {
+    padding-left: 24px !important;
 }
+
+/* Visually Pleasing Sidebar Separator (Gradient) */
+.sidebar-sep-gradient {
+    border-bottom: 1px solid transparent;
+    border-image: linear-gradient(to right, transparent 2%, rgba(71, 85, 105, 0.6) 50%, transparent 98%) 1;
+    /* slate-600/60ish */
+}
+
+.sidebar-sep-gradient-top {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(to right, transparent 2%, rgba(71, 85, 105, 0.6) 50%, transparent 98%) 1;
+}
+
+/* Strict Icon Colors (Force Override Active State) */
+.icon-grey-light {
+    color: #94a3b8 !important;
+}
+
+/* Slate-400 */
+.icon-grey-dark {
+    color: #64748b !important;
+}
+
+/* Slate-500 */
+.icon-green {
+    color: #10b981 !important;
+}
+
+/* Emerald-500 */
+.icon-blue {
+    color: #3b82f6 !important;
+}
+
+/* Blue-500 */
+.icon-yellow {
+    color: #eab308 !important;
+}
+
+/* Yellow-500 */
+.icon-purple {
+    color: #a855f7 !important;
+}
+
+/* Purple-500 */
 
 @media print {
     body * {
@@ -528,4 +570,28 @@
         font-size: 0.8rem;
         color: #9ca3af;
     }
+}
+
+/* --- Logo Text --- */
+.logo-text {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    /* ExtraBold for the rounded, fun look */
+    font-size: 2.5rem;
+    letter-spacing: 0.02em;
+    /* Gradient: Balanced 50/50 Blue to Green transition */
+    background: linear-gradient(to right, #3b82f6, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-transform: uppercase;
+    margin: 0;
+    padding: 0.5rem 0;
+    text-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+}
+
+/* Custom Green Hover for Groups */
+.btn-hover-green:hover {
+    background-color: #ecfdf5 !important;
+    color: #059669 !important;
 }
